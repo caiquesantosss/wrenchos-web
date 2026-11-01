@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
+import styles from './index.module.css'
 
 export const Route = createFileRoute('/')({
   component: Dashboard,
@@ -6,9 +7,8 @@ export const Route = createFileRoute('/')({
 
 function Dashboard() {
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-gray-900">Dashboard WrenchOS</h1>
-      <p className="mt-2 text-gray-600">Bem-vindo ao sistema de gestão.</p>
+    <div className={styles.container}>
+      <h1 className={styles.title}>WrenchOS Dashboard</h1>
     </div>
   )
 }
