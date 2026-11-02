@@ -6,31 +6,31 @@ export interface LoginCredentialsDTO {
 }
 
 export interface LoginResponseDTO {
-    access_token: string
-    usuario: {
-        id: number, 
-        nome: string, 
-        email: string
-    }
+    token: string;
+    perfil: string;
+    nome: string;
 }
 
 export async function login(credentials: {
     email: string, 
-    senha: string
+    senha: string 
 }): Promise<LoginResponseDTO> {
+    
     const response = await apiFetch<LoginResponseDTO>('/users/login', {
         method: 'POST', 
-        body: JSON.stringify(credentials)
+        body: JSON.stringify(credentials) 
     })
 
-    if (response.access_token) {
-        localStorage.setItem('@WrenchOS:token', response.access_token) 
-        localStorage.setItem('@WrenchOS:usuario', JSON.stringify(
-            response.usuario
-        ))
+    if (response.token) {
+        localStorage.setItem('@WrenchOS:token', response.token);
+        
+        localStorage.setItem('@WrenchOS:usuario', JSON.stringify({
+            nome: response.nome,
+            perfil: response.perfil
+        }));
     }
 
-    return response
+    return response;
 }
 
 export function logout() {

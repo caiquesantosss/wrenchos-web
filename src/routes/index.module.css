@@ -1,0 +1,279 @@
+.container {
+  display: flex;
+  width: 100%;
+  min-height: 100dvh;
+  padding: 0.75rem;
+  gap: 0.75rem;
+  background: #ecf4fa;
+  color: #172A35;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  align-items: stretch;
+}
+
+
+.mainContent {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: calc(100dvh - 1.5rem);
+  box-sizing: border-box;
+  padding: 1.5rem;
+  border-radius: 0.875rem;
+  background: #ecf4fa;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem;
+  border-radius: 0.85rem;
+  border: 1px solid #e6e6e6;
+  background: #FFFF;
+}
+
+.topbar h1 {
+  font-size: 1.375rem;
+  font-weight: 700;
+}
+
+.topbar span {
+  color: #647987;
+  font-size: 0.8rem;
+}
+
+.content {
+  padding-top: 1.75rem;
+}
+
+.content h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.content p {
+  margin-top: 0.375rem;
+  color: #647987;
+  font-size: 0.875rem;
+}
+
+.textInfo p {
+  color: #647987;
+  font-size: 0.775rem;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1.25rem;
+  width: auto;
+  flex-shrink: 0;
+}
+
+.bell {
+  width: 1.25rem;
+  flex-shrink: 0;
+}
+
+.activeOperation {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e6e6e6;
+  border-radius: 0.5rem;
+  background: #fff;
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.activeCircle {
+  width: 0.5rem;
+  height: 0.5rem;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #00b37e;
+}
+
+.newOrderButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.7rem 0.95rem;
+  border: none;
+  border-radius: 0.5rem;
+  background: #00786f;
+  color: #fff;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.userAvatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  flex-shrink: 0;
+  border: 1px solid #A8DED4;
+  border-radius: 50%;
+  background: #D5F2EC;
+  color: #087F70;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: calc(100dvh - 1.5rem);
+  box-sizing: border-box;
+  padding: 1.5rem;
+  margin-top: 1.5rem;
+  border-radius: 0.875rem;
+  background: #ffffff6c;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1.25rem;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between; 
+  padding: 1.25rem;
+  border-radius: 0.85rem;
+  border: 1px solid #e6e6e6;
+  background: #FFFF;
+  min-height: 130px; 
+  box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.cardTitle {
+  color: #647987;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.cardValue {
+  font-size: 2rem;
+  font-weight: 600;
+  color: #172A35;
+  margin: 0.75rem 0;
+  line-height: 1;
+}
+
+.cardFooter {
+  font-size: 0.75rem;
+  color: #647987;
+  margin: 0;
+}
+
+.iconWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.375rem;
+}
+
+.iconGray {
+  background-color: #f1f5f9;
+  color: #647987;
+}
+
+.iconOrange {
+  background-color: #fff7ed;
+  color: #ea580c;
+}
+
+.iconRed {
+  background-color: #fef2f2;
+  color: #dc2626;
+}
+
+.iconGreen {
+  background-color: #ecfdf5;
+  color: #059669;
+}
+
+.textOrange {
+  color: #ea580c !important; 
+}
+
+.textRed {
+  color: #dc2626 !important;
+}
+
+.newOrderButton:hover {
+  background: #009688;
+}
+
+.newOrderButton:active {
+  transform: scale(0.98);
+}
+
+.iconBlue {
+  background-color: #eff6ff;
+  color: #3b82f6;
+}
+
+.textBlue {
+  color: #3b82f6 !important;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 0.5rem;
+  }
+
+  .sidebar {
+    width: 230px;
+    min-width: 230px;
+  }
+
+  .mainContent {
+    padding: 1rem;
+  }
+}
+
+@media (max-height: 750px) {
+  .sidebar {
+    padding-top: 1rem;
+  }
+
+  .sidebarHeader {
+    padding-bottom: 1rem;
+  }
+
+  .navigation {
+    gap: 0.75rem;
+    padding-top: 0.75rem;
+  }
+
+  .navItem {
+    min-height: 2.1rem;
+    padding-top: 0.4rem;
+    padding-bottom: 0.4rem;
+  }
+
+  .shiftCard {
+    gap: 0.3rem;
+  }
+}

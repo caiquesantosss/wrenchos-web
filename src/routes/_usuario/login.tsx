@@ -5,7 +5,7 @@ import { z } from "zod"
 import { useState } from "react"
 import { useMutation } from "@tanstack/react-query"
 import { login } from "../../features/auth/api/login"
-import workshopImg from "../../assets/workshop.jpg" // Imagem importada dos assets
+import workshopImg from "../../assets/workshop.jpg" 
 import { 
   Mail, Lock, Eye, EyeOff, Wrench, 
   CheckCircle2, ArrowRight, Info 
@@ -13,7 +13,7 @@ import {
 
 import styles from "./login.module.css"
 
-export const Route = createFileRoute("/usuario/login")({
+export const Route = createFileRoute("/_usuario/login")({
   component: LoginPage,
 })
 
@@ -130,12 +130,8 @@ function LoginPage() {
           </form>
 
           <div className={styles.signupPrompt}>
-            Ainda não tem conta? <Link to="/" className={styles.signupLink}>Criar cadastro</Link>
+            Não possui acesso? Solicite ao administrador.
           </div>
-        </div>
-
-        <div className={styles.footer}>
-          <Info size={14} /> Ambiente demonstrativo - Sem autenticação real
         </div>
       </div>
 
