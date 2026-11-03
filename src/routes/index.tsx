@@ -1,18 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router"
-import { useQuery } from "@tanstack/react-query"
-import {
-  Bell,
-  CheckCircle,
-  ClipboardList,
-  FileText,
-  Package,
-  Wallet,
-} from "lucide-react"
-
 import styles from "./index.module.css"
-import { getAllOrders } from "../features/orders/api/get-orders"
-import { allCatalogItems } from "../features/items/catalogo/api/catalogo_items"
 import Cards from "../components/cards"
+import { Bell } from "lucide-react"
 
 export const Route = createFileRoute("/")({
   component: Dashboard,

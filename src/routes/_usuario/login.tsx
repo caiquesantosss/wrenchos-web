@@ -8,7 +8,7 @@ import { login } from "../../features/auth/api/login"
 import workshopImg from "../../assets/workshop.jpg" 
 import { 
   Mail, Lock, Eye, EyeOff, Wrench, 
-  CheckCircle2, ArrowRight, Info 
+  CheckCircle2, ArrowRight 
 } from "lucide-react"
 
 import styles from "./login.module.css"
