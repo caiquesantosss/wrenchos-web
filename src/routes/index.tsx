@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router"
 import styles from "./index.module.css"
 import Cards from "../components/cards"
 import { Bell } from "lucide-react"
+import RecentOrders from "../components/recentOrders"
 
 export const Route = createFileRoute("/")({
   component: Dashboard,
@@ -51,7 +52,7 @@ function Dashboard() {
 
       <main className={styles.content}>
         <Cards />
-        
+        <RecentOrders />
       </main>
     </section>
   )
