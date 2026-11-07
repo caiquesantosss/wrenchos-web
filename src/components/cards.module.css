@@ -7,13 +7,13 @@
 .card {
   display: flex;
   flex-direction: column;
-  justify-content: space-between; 
+  justify-content: space-between;
   padding: 1.25rem;
   border-radius: 0.85rem;
   border: 1px solid #e6e6e6;
   background: #FFFF;
-  min-height: 130px; 
-  box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+  min-height: 130px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
 }
 
 .cardHeader {
@@ -30,10 +30,11 @@
 
 .cardValue {
   font-size: 2rem;
-  font-weight: 600;
+  font-weight: 400;
   color: #172A35;
   margin: 0.75rem 0;
   line-height: 1;
+  font-family: var(--font-mono);
 }
 
 .cardFooter {
@@ -72,7 +73,7 @@
 }
 
 .textOrange {
-  color: #ea580c !important; 
+  color: #ea580c !important;
 }
 
 .textRed {

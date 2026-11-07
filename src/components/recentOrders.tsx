@@ -6,10 +6,7 @@ import { getAllOrders } from "../features/orders/api/get-orders"
 export default function RecentOrders() {
   const [selectedFilter, setSelectedFilter] = useState("abertas")
 
-  const {
-    data: allOrders,
-    isLoading: isLoadingOrders,
-  } = useQuery({
+  const { data: allOrders, isLoading: isLoadingOrders } = useQuery({
     queryKey: ["orders", "todas"],
     queryFn: getAllOrders,
   })
@@ -17,17 +14,16 @@ export default function RecentOrders() {
   const orders = allOrders ?? []
 
   const filteredOrders = orders
-    .filter(order => {
+    .filter((order) => {
       if (selectedFilter === "abertas") {
-        return order.status !== "CONCLUIDA" &&
-               order.status !== "CANCELADA"
+        return order.status !== "CONCLUIDA" && order.status !== "CANCELADA"
       }
       return order.status === "CONCLUIDA"
     })
     .sort(
       (a, b) =>
         new Date(b.data_abertura).getTime() -
-        new Date(a.data_abertura).getTime()
+        new Date(a.data_abertura).getTime(),
     )
     .slice(0, 5)
 
@@ -48,10 +44,20 @@ export default function RecentOrders() {
   }
 
   const getStatusStyle = (status: string) => {
-    if (["EM_EXECUCAO", "AGUARDANDO_APROVACAO"].includes(status)) {
-      return styles.statusOrange
+    switch (status) {
+      case "EM_EXECUCAO":
+      case "AGUARDANDO_APROVACAO":
+        return styles.statusOrange
+      case "CONCLUIDA":
+        return styles.statusGreen
+      case "CANCELADA":
+        return styles.statusRed
+      case "ORCAMENTO_PENDENTE":
+        return styles.statusBlue
+      case "ABERTA":
+      default:
+        return styles.statusGray
     }
-    return styles.statusGray
   }
 
   return (
@@ -85,32 +91,34 @@ export default function RecentOrders() {
       </div>
 
       {isLoadingOrders ? (
-        <p style={{ padding: '1.5rem' }}>Carregando ordens de serviço...</p>
+        <p style={{ padding: "1.5rem" }}>Carregando ordens de serviço...</p>
       ) : (
         <div className={styles.ordersList}>
           {filteredOrders.length === 0 ? (
-            <p style={{ padding: '1.5rem' }}>Nenhuma ordem de serviço encontrada.</p>
+            <p style={{ padding: "1.5rem" }}>
+              Nenhuma ordem de serviço encontrada.
+            </p>
           ) : (
-            filteredOrders.map(order => (
-              <div
-                key={order.id_ordem_servico}
-                className={styles.orderRow}
-              >
+            filteredOrders.map((order) => (
+              <div key={order.id_ordem_servico} className={styles.orderRow}>
                 <div>
                   <span className={styles.osNumber}>
                     OS - {order.id_ordem_servico}
                   </span>
-                  {/* Como a prioridade não vem da API, deixei como "Normal" */}
                   <span className={styles.subText}>Normal</span>
                 </div>
 
                 <div>
                   <strong>{order.cliente.nome}</strong>
-                  <span className={styles.subText}>{order.ativo.descricao}</span>
+                  <span className={styles.subText}>
+                    {order.ativo.descricao}
+                  </span>
                 </div>
 
                 <div className={styles.statusWrapper}>
-                  <div className={`${styles.status} ${getStatusStyle(order.status)}`}>
+                  <div
+                    className={`${styles.status} ${getStatusStyle(order.status)}`}
+                  >
                     <span className={styles.statusDot}></span>
                     {statusLabels[order.status]}
                   </div>
@@ -120,9 +128,7 @@ export default function RecentOrders() {
                   <strong>{formatCurrency(Number(order.valor_total))}</strong>
                 </div>
 
-                <div className={styles.actionIcon}>
-                  ↗
-                </div>
+                <div className={styles.actionIcon}>↗</div>
               </div>
             ))
           )}
@@ -131,7 +137,8 @@ export default function RecentOrders() {
 
       <div className={styles.footer}>
         <span className={styles.footerText}>
-          {filteredOrders.length} {filteredOrders.length === 1 ? 'ordem' : 'ordens'} em acompanhamento
+          {filteredOrders.length}{" "}
+          {filteredOrders.length === 1 ? "ordem" : "ordens"} em acompanhamento
         </span>
         <span className={styles.footerLink}>Ver todas as ordens ➔</span>
       </div>

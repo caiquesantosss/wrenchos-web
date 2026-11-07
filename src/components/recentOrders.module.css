@@ -1,6 +1,6 @@
 .recentOrdersContainer {
     background-color: #fff;
-    width: 65%;
+    width: 75%;
     min-height: 28rem;
     margin-top: 2rem;
     border: 1px solid #d8e1e8;
@@ -109,6 +109,10 @@
     display: flex;
 }
 
+.statusWrapper {
+    display: flex;
+}
+
 .status {
     display: flex;
     align-items: center;
@@ -116,7 +120,7 @@
     border-radius: 6px;
     padding: 0.25rem 0.5rem;
     width: fit-content;
-    font-size: 0.65rem; 
+    font-size: 0.65rem;
     font-weight: 600;
 }
 
@@ -134,6 +138,36 @@
 
 .statusOrange .statusDot {
     background-color: #c46a19;
+}
+
+.statusGreen {
+    background-color: #ecfdf5;
+    color: #059669;
+    border: 1px solid #a7f3d0;
+}
+
+.statusGreen .statusDot {
+    background-color: #059669;
+}
+
+.statusRed {
+    background-color: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+}
+
+.statusRed .statusDot {
+    background-color: #dc2626;
+}
+
+.statusBlue {
+    background-color: #eff6ff;
+    color: #2563eb;
+    border: 1px solid #bfdbfe;
+}
+
+.statusBlue .statusDot {
+    background-color: #2563eb;
 }
 
 .statusGray {

@@ -1,19 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router"
 import styles from "./index.module.css"
 import Cards from "../components/cards"
-import { Bell } from "lucide-react"
+import { Bell, CheckCircle2, Clock, Package } from "lucide-react"
 import RecentOrders from "../components/recentOrders"
+import RightColumn from "../components/rightColumn"
 
 export const Route = createFileRoute("/")({
   component: Dashboard,
 })
 
 function Dashboard() {
-
   const usuarioString = localStorage.getItem("@WrenchOS:usuario")
   const usuario = usuarioString ? JSON.parse(usuarioString) : null
 
-    const todayDate = new Intl.DateTimeFormat("pt-BR", {
+  const todayDate = new Intl.DateTimeFormat("pt-BR", {
     weekday: "long",
     day: "2-digit",
     month: "long",
@@ -52,7 +52,11 @@ function Dashboard() {
 
       <main className={styles.content}>
         <Cards />
-        <RecentOrders />
+
+        <div className={styles.rowContainers}>
+          <RecentOrders />
+          <RightColumn />
+        </div>
       </main>
     </section>
   )

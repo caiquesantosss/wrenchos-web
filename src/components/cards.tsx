@@ -44,7 +44,6 @@ export default function Cards() {
     quantity: allOrders?.filter((os) => os.status !== "CONCLUIDA").length ?? 0,
   }
 
-  // Get OS concluded today
   const today = new Date()
   const formattedDate = today.toISOString().slice(0, 10)
 
@@ -54,7 +53,6 @@ export default function Cards() {
       return os.status === "CONCLUIDA" && osDate === formattedDate
     }).length ?? 0
 
-  // Compare today with yesterday
   const yesterday = new Date()
   yesterday.setDate(yesterday.getDate() - 1)
 
