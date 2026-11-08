@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ClientesRouteImport } from './routes/clientes'
+import { Route as Ordem_servicoOrdemServicoRouteImport } from './routes/_ordem_servico/ordemServico'
 import { Route as UsuarioLoginRouteImport } from './routes/_usuario/login'
 
 const IndexRoute = IndexRouteImport.update({
@@ -23,6 +24,12 @@ const ClientesRoute = ClientesRouteImport.update({
   path: '/clientes',
   getParentRoute: () => rootRouteImport,
 } as any)
+const Ordem_servicoOrdemServicoRoute =
+  Ordem_servicoOrdemServicoRouteImport.update({
+    id: '/_ordem_servico/ordemServico',
+    path: '/ordemServico',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const UsuarioLoginRoute = UsuarioLoginRouteImport.update({
   id: '/_usuario/login',
   path: '/login',
@@ -32,30 +39,39 @@ const UsuarioLoginRoute = UsuarioLoginRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/clientes': typeof ClientesRoute
+  '/ordemServico': typeof Ordem_servicoOrdemServicoRoute
   '/login': typeof UsuarioLoginRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/clientes': typeof ClientesRoute
+  '/ordemServico': typeof Ordem_servicoOrdemServicoRoute
   '/login': typeof UsuarioLoginRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/clientes': typeof ClientesRoute
+  '/_ordem_servico/ordemServico': typeof Ordem_servicoOrdemServicoRoute
   '/_usuario/login': typeof UsuarioLoginRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/clientes' | '/login'
+  fullPaths: '/' | '/clientes' | '/ordemServico' | '/login'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/clientes' | '/login'
-  id: '__root__' | '/' | '/clientes' | '/_usuario/login'
+  to: '/' | '/clientes' | '/ordemServico' | '/login'
+  id:
+    | '__root__'
+    | '/'
+    | '/clientes'
+    | '/_ordem_servico/ordemServico'
+    | '/_usuario/login'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ClientesRoute: typeof ClientesRoute
+  Ordem_servicoOrdemServicoRoute: typeof Ordem_servicoOrdemServicoRoute
   UsuarioLoginRoute: typeof UsuarioLoginRoute
 }
 
@@ -75,6 +91,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClientesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_ordem_servico/ordemServico': {
+      id: '/_ordem_servico/ordemServico'
+      path: '/ordemServico'
+      fullPath: '/ordemServico'
+      preLoaderRoute: typeof Ordem_servicoOrdemServicoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_usuario/login': {
       id: '/_usuario/login'
       path: '/login'
@@ -88,6 +111,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ClientesRoute: ClientesRoute,
+  Ordem_servicoOrdemServicoRoute: Ordem_servicoOrdemServicoRoute,
   UsuarioLoginRoute: UsuarioLoginRoute,
 }
 export const routeTree = rootRouteImport

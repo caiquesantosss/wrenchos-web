@@ -60,11 +60,15 @@ export default function SideBar() {
             <span>Painel</span>
           </Link>
 
-          <button className={styles.navItem} type="button">
+          <Link
+            to="/ordemServico"
+            className={styles.navItem}
+            activeProps={{ className: styles.active }}
+          >
             <ClipboardList size={17} />
             <span>Ordens de serviço</span>
             <span className={styles.navBadge}>5</span>
-          </button>
+          </Link>
 
           <Link
             to="/clientes"

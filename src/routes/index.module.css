@@ -20,26 +20,6 @@
   border-radius: 0.875rem;
 }
 
-.topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1.25rem;
-  border-radius: 0.85rem;
-  border: 1px solid #e6e6e6;
-  background: #FFFF;
-}
-
-.topbar h1 {
-  font-size: 1.375rem;
-  font-weight: 700;
-}
-
-.topbar span {
-  color: #647987;
-  font-size: 0.8rem;
-}
-
 .content {
   padding-top: 1.75rem;
 }
@@ -55,75 +35,6 @@
   font-size: 0.875rem;
 }
 
-.textInfo p {
-  color: #647987;
-  font-size: 0.775rem;
-}
-
-.actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 1.25rem;
-  width: auto;
-  flex-shrink: 0;
-}
-
-.bell {
-  width: 1.25rem;
-  flex-shrink: 0;
-}
-
-.activeOperation {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid #e6e6e6;
-  border-radius: 0.5rem;
-  background: #fff;
-  font-size: 0.75rem;
-  white-space: nowrap;
-}
-
-.activeCircle {
-  width: 0.5rem;
-  height: 0.5rem;
-  flex-shrink: 0;
-  border-radius: 50%;
-  background: #00b37e;
-}
-
-.newOrderButton {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.7rem 0.95rem;
-  border: none;
-  border-radius: 0.5rem;
-  background: #00786f;
-  color: #fff;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: background 0.2s ease, transform 0.2s ease;
-}
-
-.userAvatar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  flex-shrink: 0;
-  border: 1px solid #A8DED4;
-  border-radius: 50%;
-  background: #D5F2EC;
-  color: #087F70;
-  font-size: 0.7rem;
-  font-weight: 700;
-}
-
 .content {
   display: flex;
   flex: 1;
@@ -132,7 +43,6 @@
   min-height: calc(100dvh - 1.5rem);
   box-sizing: border-box;
   padding: 1.5rem;
-  margin-top: 1.5rem;
   border-radius: 0.875rem;
 }
 
@@ -142,6 +52,14 @@
   gap: 1.5rem;
   align-items: flex-start;
   width: 100%;
+}
+
+.leftColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  flex: 1;
+  min-width: 0;
 }
 
 

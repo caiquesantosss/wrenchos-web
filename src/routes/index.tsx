@@ -1,34 +1,31 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { useQuery } from "@tanstack/react-query"
-import { Bell, CheckCircle2, ClipboardList, FileText, Package, Wallet } from "lucide-react"
+import {
+  Bell,
+  CheckCircle2,
+  ClipboardList,
+  FileText,
+  Package,
+  Wallet,
+} from "lucide-react"
 
 import { allCatalogItems } from "../features/items/catalogo/api/catalogo_items"
 import { getAllOrders } from "../features/orders/api/get-orders"
-import { SummaryCard } from "../components/SummaryCard" 
+import { SummaryCard } from "../components/cards"
 
 import cardStyle from "../components/cards.module.css"
 
 import styles from "./index.module.css"
 import RecentOrders from "../components/recentOrders"
 import RightColumn from "../components/rightColumn"
+import { getAllFinanceiro } from "../features/finance/api/financeiro"
+import Activity from "../components/activity"
 
 export const Route = createFileRoute("/")({
   component: Dashboard,
 })
 
 function Dashboard() {
-  const usuarioString = localStorage.getItem("@WrenchOS:usuario")
-  const usuario = usuarioString ? JSON.parse(usuarioString) : null
-
-  const todayDate = new Intl.DateTimeFormat("pt-BR", {
-    weekday: "long",
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  }).format(new Date())
-
-  const formatedDay = todayDate.charAt(0).toUpperCase() + todayDate.slice(1)
-
   const { data: allOrders, isLoading: isLoadingOrders } = useQuery({
     queryKey: ["orders", "todas"],
     queryFn: getAllOrders,
@@ -37,6 +34,11 @@ function Dashboard() {
   const { data: allCatalog, isLoading: isLoadingCatalog } = useQuery({
     queryKey: ["catalog-items", "todos"],
     queryFn: allCatalogItems,
+  })
+
+  const { data: allFinanceiro, isLoading: isLoadingFinance } = useQuery({
+    queryKey: ["financeiro", "todos"],
+    queryFn: getAllFinanceiro,
   })
 
   const quantityInExecution =
@@ -57,14 +59,15 @@ function Dashboard() {
         item.estoque_atual <= item.estoque_minimo,
     ).length ?? 0
 
-  const calcTotalOpenOs = {
+  const calcTotalOpenFinance = {
     total:
-      allOrders?.reduce(
+      allFinanceiro?.reduce(
         (acc, os) =>
-          os.status !== "CONCLUIDA" ? acc + Number(os.valor_total) : acc,
+          os.status_pagamento !== "PAGO" ? acc + Number(os.valor) : acc,
         0,
       ) ?? 0,
-    quantity: allOrders?.filter((os) => os.status !== "CONCLUIDA").length ?? 0,
+    quantity:
+      allFinanceiro?.filter((os) => os.status_pagamento !== "PAGO").length ?? 0,
   }
 
   const today = new Date()
@@ -91,32 +94,6 @@ function Dashboard() {
 
   return (
     <section className={styles.mainContent}>
-      <header className={styles.topbar}>
-        <div className={styles.textInfo}>
-          <h1>Painel operacional</h1>
-          <p>{formatedDay}</p>
-        </div>
-
-        <div className={styles.actions}>
-          <div className={styles.activeOperation}>
-            <div className={styles.activeCircle}></div>
-            <p>
-              OPERAÇÃO <strong>Ativa</strong>
-            </p>
-          </div>
-
-          <Bell className={styles.bell} />
-
-          <button className={styles.newOrderButton}>
-            <p>+</p> Nova ordem
-          </button>
-
-          <div className={styles.userAvatar}>
-            {usuario?.nome ? usuario.nome.charAt(0).toUpperCase() : "A"}
-          </div>
-        </div>
-      </header>
-
       <main className={styles.content}>
         <section className={cardStyle.cards}>
           <SummaryCard
@@ -137,10 +114,13 @@ function Dashboard() {
             footerText={
               isLoadingOrders
                 ? "Calculando..."
-                : `R$ ${quantityOsPendentAndTotal.total.toLocaleString("pt-BR", {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })} aguardando`
+                : `R$ ${quantityOsPendentAndTotal.total.toLocaleString(
+                    "pt-BR",
+                    {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    },
+                  )} aguardando`
             }
             footerTheme="orange"
           />
@@ -163,13 +143,17 @@ function Dashboard() {
             value={
               isLoadingOrders
                 ? "..."
-                : calcTotalOpenOs.total.toLocaleString("pt-BR", {
+                : calcTotalOpenFinance.total.toLocaleString("pt-BR", {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
                   })
             }
             isLoading={false}
-            footerText={`${calcTotalOpenOs.quantity} notas que não foram concluídas`}
+            footerText={`${calcTotalOpenFinance.quantity} ${
+              calcTotalOpenFinance.quantity === 1
+                ? "nota que não foi concluída"
+                : "notas que não foram concluídas"
+            }`}
           />
 
           <SummaryCard
@@ -190,7 +174,11 @@ function Dashboard() {
         </section>
 
         <div className={styles.rowContainers}>
-          <RecentOrders />
+          <div className={styles.leftColumn}>
+            <RecentOrders />
+            <Activity />
+          </div>
+
           <RightColumn />
         </div>
       </main>

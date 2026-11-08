@@ -2,26 +2,78 @@ import { CheckCircle2, Clock, Package } from "lucide-react"
 import styles from "./rightColumn.module.css"
 import { getAllFinanceiro } from "../features/finance/api/financeiro"
 import { useQuery } from "@tanstack/react-query"
+import { getAllOrders } from "../features/orders/api/get-orders"
 
 export default function RightColumn() {
-  const { data: allFinanceiro, isLoading: isLoadingOrders } = useQuery({
+  const { data: allFinanceiro, isLoading: isLoadingFinance } = useQuery({
     queryKey: ["financeiro", "todos"],
     queryFn: getAllFinanceiro,
   })
 
-  const financeiro = allFinanceiro ?? []
+  const { data: allOrders, isLoading: isLoadingOrders } = useQuery({
+    queryKey: ["orders", "todas"],
+    queryFn: getAllOrders,
+  })
 
-  console.log(financeiro)
+  const financeiro = allFinanceiro ?? []
+  const orders = allOrders ?? []
+
+  const hoje = new Date()
+  const mesAtual = hoje.getMonth()
+  const anoAtual = hoje.getFullYear()
+
+  const mesPassado = mesAtual === 0 ? 11 : mesAtual - 1
+  const anoMesPassado = mesAtual === 0 ? anoAtual - 1 : anoAtual
+
+  const recebidoMesAtual = financeiro
+    .filter((f) => {
+      if (f.tipo_lancamento !== "RECEITA" || f.status_pagamento !== "PAGO" || !f.data_pagamento) return false
+      const dataPag = new Date(f.data_pagamento)
+      return dataPag.getMonth() === mesAtual && dataPag.getFullYear() === anoAtual
+    })
+    .reduce((acc, f) => acc + Number(f.valor), 0)
+
+  const recebidoMesPassado = financeiro
+    .filter((f) => {
+      if (f.tipo_lancamento !== "RECEITA" || f.status_pagamento !== "PAGO" || !f.data_pagamento) return false
+      const dataPag = new Date(f.data_pagamento)
+      return dataPag.getMonth() === mesPassado && dataPag.getFullYear() === anoMesPassado
+    })
+    .reduce((acc, f) => acc + Number(f.valor), 0)
+
+  let variacao = 0
+  if (recebidoMesPassado > 0) {
+    variacao = ((recebidoMesAtual - recebidoMesPassado) / recebidoMesPassado) * 100
+  } else if (recebidoMesAtual > 0) {
+    variacao = 100
+  }
+
+  const isPositive = variacao >= 0
+  const variacaoFormatada = Math.abs(variacao).toLocaleString("pt-BR", { maximumFractionDigits: 1 })
+
+  const totalFaturamento = financeiro
+    .filter((f) => f.tipo_lancamento === "RECEITA")
+    .reduce((acc, f) => acc + Number(f.valor), 0)
 
   const totalAReceber = financeiro
-    .filter(
-      (item) =>
-        item.tipo_lancamento === "RECEITA" &&
-        item.status_pagamento !== "PAGO",
-    )
-    .reduce((acc, item) => acc + Number(item.valor), 0)
+    .filter((f) => f.tipo_lancamento === "RECEITA" && f.status_pagamento !== "PAGO")
+    .reduce((acc, f) => acc + Number(f.valor), 0)
 
-  console.log(totalAReceber)
+  const totalCustosOperacionais = orders.reduce((accOS, os) => {
+    const custoItens = os.itens_os?.reduce((accItem, item) => {
+      return accItem + (Number(item.quantidade || 1) * Number(item.valor_unitario || item.valor_total || 0))
+    }, 0) || 0
+    return accOS + custoItens
+  }, 0)
+
+  const pctAReceber = totalFaturamento > 0 ? (totalAReceber / totalFaturamento) * 100 : 0
+  const pctCustos = totalFaturamento > 0 ? (totalCustosOperacionais / totalFaturamento) * 100 : 0
+
+  const formatCurrency = (value: number) =>
+    value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+
+  const isLoading = isLoadingFinance || isLoadingOrders
+
   return (
     <div className={styles.rightColumn}>
       <div className={styles.financeSummaryCard}>
@@ -31,21 +83,30 @@ export default function RightColumn() {
         </div>
 
         <div className={styles.mainValueContainer}>
-          <h1>R$ 87.400</h1>
+          <h1>{isLoading ? "..." : formatCurrency(recebidoMesAtual)}</h1>
+
           <span className={styles.subtitle}>
-            recebido neste mês <span className={styles.positive}>↑ 12,8%</span>
+            <span
+              className={isPositive ? styles.positive : ''}
+              style={!isPositive ? { color: "#dc2626", fontWeight: 500 } : {}}
+            >
+              {isPositive ? "↑" : "↓"} {variacaoFormatada}%
+            </span>{" "}
+            em relação ao mês passado
           </span>
         </div>
 
         <div className={styles.progressSection}>
           <div className={styles.progressHeader}>
             <span>A receber</span>
-            <span className={styles.progressValue}>R$ 34.200</span>
+            <span className={styles.progressValue}>
+              {isLoading ? "..." : formatCurrency(totalAReceber)}
+            </span>
           </div>
           <div className={styles.progressBarBg}>
             <div
               className={styles.progressBarFillGreen}
-              style={{ width: "39%" }}
+              style={{ width: `${pctAReceber}%` }}
             ></div>
           </div>
         </div>
@@ -53,12 +114,14 @@ export default function RightColumn() {
         <div className={styles.progressSection}>
           <div className={styles.progressHeader}>
             <span>Custos operacionais</span>
-            <span className={styles.progressValue}>R$ 21.900</span>
+            <span className={styles.progressValue}>
+              {isLoading ? "..." : formatCurrency(totalCustosOperacionais)}
+            </span>
           </div>
           <div className={styles.progressBarBg}>
             <div
               className={styles.progressBarFillOrange}
-              style={{ width: "25%" }}
+              style={{ width: `${Math.min(pctCustos, 100)}%` }}
             ></div>
           </div>
         </div>
