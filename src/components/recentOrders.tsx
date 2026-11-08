@@ -37,7 +37,7 @@ export default function RecentOrders() {
   const statusLabels: Record<string, string> = {
     ABERTA: "Aberta",
     ORCAMENTO_PENDENTE: "Orçamento",
-    AGUARDANDO_APROVACAO: "Aguardando peças",
+    AGUARDANDO_APROVACAO: "Aguardando aprovação",
     EM_EXECUCAO: "Em execução",
     CONCLUIDA: "Concluída",
     CANCELADA: "Cancelada",
