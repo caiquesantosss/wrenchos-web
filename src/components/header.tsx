@@ -1,4 +1,5 @@
-import { Bell } from "lucide-react"
+import { Bell, Plus } from "lucide-react"
+import { Link } from "@tanstack/react-router"
 import styles from "./header.module.css"
 
 interface HeaderProps {
@@ -16,13 +17,13 @@ export default function Header({ title }: HeaderProps) {
     year: "numeric",
   }).format(new Date())
 
-  const formatedDay = todayDate.charAt(0).toUpperCase() + todayDate.slice(1)
-  
+  const formattedDay = todayDate.charAt(0).toUpperCase() + todayDate.slice(1)
+
   return (
     <header className={styles.topbar}>
       <div className={styles.textInfo}>
         <h1>{title}</h1>
-        <p>{formatedDay}</p>
+        <p>{formattedDay}</p>
       </div>
 
       <div className={styles.actions}>
@@ -35,9 +36,10 @@ export default function Header({ title }: HeaderProps) {
 
         <Bell className={styles.bell} />
 
-        <button className={styles.newOrderButton}>
-          <p>+</p> Nova ordem
-        </button>
+        <Link to="/nova" className={styles.newOrderButton}>
+          <Plus size={17} strokeWidth={2.5} />
+          <span>Nova ordem</span>
+        </Link>
 
         <div className={styles.userAvatar}>
           {usuario?.nome ? usuario.nome.charAt(0).toUpperCase() : "A"}
