@@ -15,6 +15,19 @@ export type StatusPagamento =
     | 'CANCELADO'
     | 'ATRASADO'
 
+export interface OrdemServicoFinanceiroDTO {
+    id_ordem_servico: number
+    status: string
+    descricao_problema: string
+    diagnostico: string | null
+    solucao_aplicada: string | null
+    valor_mao_obra: number
+    valor_pecas: number
+    valor_total: number
+    data_abertura: string
+    data_previsao: string | null
+    data_conclusao: string | null
+}
 
 export interface FinanceiroDTO {
     id_financeiro: number
@@ -24,14 +37,24 @@ export interface FinanceiroDTO {
     status_pagamento: StatusPagamento
     valor: number
     forma_pagamento: MetodoPagamento
-    referencia_externa: string | null 
+    referencia_externa: string | null
     data_vencimento: string | null
     data_pagamento: string | null
     data_cadastro: string
 }
 
+export interface FinanceiroWithOSDTO extends FinanceiroDTO {
+    ordem_servico: OrdemServicoFinanceiroDTO
+}
+
 export const getAllFinanceiro = async (): Promise<FinanceiroDTO[]> => {
     return apiFetch<FinanceiroDTO[]>('/financeiro', {
+        method: 'GET',
+    })
+}
+
+export const getAllFinanceiroWithOS = async (): Promise<FinanceiroWithOSDTO[]> => {
+    return apiFetch<FinanceiroWithOSDTO[]>('/financeiro/com-ordens-servico', {
         method: 'GET',
     })
 }

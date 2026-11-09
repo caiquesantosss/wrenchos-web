@@ -11,6 +11,8 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ClientesClientesRouteImport } from './routes/_clientes/clientes'
+import { Route as EquipamentosEquipamentosRouteImport } from './routes/_equipamentos/equipamentos'
+import { Route as OrcamentoOrcamentoRouteImport } from './routes/_orcamento/orcamento'
 import { Route as Ordem_servicoOrdemServicoRouteImport } from './routes/_ordem_servico/ordemServico'
 import { Route as UsuarioLoginRouteImport } from './routes/_usuario/login'
 import { Route as Ordem_servicoNovaIndexRouteImport } from './routes/_ordem_servico/nova/index'
@@ -23,6 +25,17 @@ const IndexRoute = IndexRouteImport.update({
 const ClientesClientesRoute = ClientesClientesRouteImport.update({
   id: '/_clientes/clientes',
   path: '/clientes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EquipamentosEquipamentosRoute =
+  EquipamentosEquipamentosRouteImport.update({
+    id: '/_equipamentos/equipamentos',
+    path: '/equipamentos',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const OrcamentoOrcamentoRoute = OrcamentoOrcamentoRouteImport.update({
+  id: '/_orcamento/orcamento',
+  path: '/orcamento',
   getParentRoute: () => rootRouteImport,
 } as any)
 const Ordem_servicoOrdemServicoRoute =
@@ -45,6 +58,8 @@ const Ordem_servicoNovaIndexRoute = Ordem_servicoNovaIndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/clientes': typeof ClientesClientesRoute
+  '/equipamentos': typeof EquipamentosEquipamentosRoute
+  '/orcamento': typeof OrcamentoOrcamentoRoute
   '/ordemServico': typeof Ordem_servicoOrdemServicoRoute
   '/login': typeof UsuarioLoginRoute
   '/nova/': typeof Ordem_servicoNovaIndexRoute
@@ -52,6 +67,8 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/clientes': typeof ClientesClientesRoute
+  '/equipamentos': typeof EquipamentosEquipamentosRoute
+  '/orcamento': typeof OrcamentoOrcamentoRoute
   '/ordemServico': typeof Ordem_servicoOrdemServicoRoute
   '/login': typeof UsuarioLoginRoute
   '/nova': typeof Ordem_servicoNovaIndexRoute
@@ -60,19 +77,37 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_clientes/clientes': typeof ClientesClientesRoute
+  '/_equipamentos/equipamentos': typeof EquipamentosEquipamentosRoute
+  '/_orcamento/orcamento': typeof OrcamentoOrcamentoRoute
   '/_ordem_servico/ordemServico': typeof Ordem_servicoOrdemServicoRoute
   '/_usuario/login': typeof UsuarioLoginRoute
   '/_ordem_servico/nova/': typeof Ordem_servicoNovaIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/clientes' | '/ordemServico' | '/login' | '/nova/'
+  fullPaths:
+    | '/'
+    | '/clientes'
+    | '/equipamentos'
+    | '/orcamento'
+    | '/ordemServico'
+    | '/login'
+    | '/nova/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/clientes' | '/ordemServico' | '/login' | '/nova'
+  to:
+    | '/'
+    | '/clientes'
+    | '/equipamentos'
+    | '/orcamento'
+    | '/ordemServico'
+    | '/login'
+    | '/nova'
   id:
     | '__root__'
     | '/'
     | '/_clientes/clientes'
+    | '/_equipamentos/equipamentos'
+    | '/_orcamento/orcamento'
     | '/_ordem_servico/ordemServico'
     | '/_usuario/login'
     | '/_ordem_servico/nova/'
@@ -81,6 +116,8 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ClientesClientesRoute: typeof ClientesClientesRoute
+  EquipamentosEquipamentosRoute: typeof EquipamentosEquipamentosRoute
+  OrcamentoOrcamentoRoute: typeof OrcamentoOrcamentoRoute
   Ordem_servicoOrdemServicoRoute: typeof Ordem_servicoOrdemServicoRoute
   UsuarioLoginRoute: typeof UsuarioLoginRoute
   Ordem_servicoNovaIndexRoute: typeof Ordem_servicoNovaIndexRoute
@@ -100,6 +137,20 @@ declare module '@tanstack/react-router' {
       path: '/clientes'
       fullPath: '/clientes'
       preLoaderRoute: typeof ClientesClientesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_equipamentos/equipamentos': {
+      id: '/_equipamentos/equipamentos'
+      path: '/equipamentos'
+      fullPath: '/equipamentos'
+      preLoaderRoute: typeof EquipamentosEquipamentosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_orcamento/orcamento': {
+      id: '/_orcamento/orcamento'
+      path: '/orcamento'
+      fullPath: '/orcamento'
+      preLoaderRoute: typeof OrcamentoOrcamentoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_ordem_servico/ordemServico': {
@@ -129,6 +180,8 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ClientesClientesRoute: ClientesClientesRoute,
+  EquipamentosEquipamentosRoute: EquipamentosEquipamentosRoute,
+  OrcamentoOrcamentoRoute: OrcamentoOrcamentoRoute,
   Ordem_servicoOrdemServicoRoute: Ordem_servicoOrdemServicoRoute,
   UsuarioLoginRoute: UsuarioLoginRoute,
   Ordem_servicoNovaIndexRoute: Ordem_servicoNovaIndexRoute,

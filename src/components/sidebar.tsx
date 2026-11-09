@@ -79,15 +79,23 @@ export default function SideBar() {
             <span>Clientes</span>
           </Link>
 
-          <button className={styles.navItem} type="button">
+          <Link
+            to="/equipamentos"
+            className={styles.navItem}
+            activeProps={{ className: styles.active }}
+          >
             <Truck size={17} />
             <span>Equipamentos</span>
-          </button>
+          </Link>
 
-          <button className={styles.navItem} type="button">
+          <Link
+            to="/orcamento"
+            className={styles.navItem}
+            activeProps={{ className: styles.active }}
+          >
             <FileText size={17} />
             <span>Orçamentos</span>
-          </button>
+          </Link>
 
           <button className={styles.navItem} type="button">
             <Package size={17} />
