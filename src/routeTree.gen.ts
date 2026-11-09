@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ClientesClientesRouteImport } from './routes/_clientes/clientes'
 import { Route as EquipamentosEquipamentosRouteImport } from './routes/_equipamentos/equipamentos'
+import { Route as EstoqueEstoqueRouteImport } from './routes/_estoque/estoque'
 import { Route as OrcamentoOrcamentoRouteImport } from './routes/_orcamento/orcamento'
 import { Route as Ordem_servicoOrdemServicoRouteImport } from './routes/_ordem_servico/ordemServico'
 import { Route as UsuarioLoginRouteImport } from './routes/_usuario/login'
@@ -33,6 +34,11 @@ const EquipamentosEquipamentosRoute =
     path: '/equipamentos',
     getParentRoute: () => rootRouteImport,
   } as any)
+const EstoqueEstoqueRoute = EstoqueEstoqueRouteImport.update({
+  id: '/_estoque/estoque',
+  path: '/estoque',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OrcamentoOrcamentoRoute = OrcamentoOrcamentoRouteImport.update({
   id: '/_orcamento/orcamento',
   path: '/orcamento',
@@ -59,6 +65,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/clientes': typeof ClientesClientesRoute
   '/equipamentos': typeof EquipamentosEquipamentosRoute
+  '/estoque': typeof EstoqueEstoqueRoute
   '/orcamento': typeof OrcamentoOrcamentoRoute
   '/ordemServico': typeof Ordem_servicoOrdemServicoRoute
   '/login': typeof UsuarioLoginRoute
@@ -68,6 +75,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/clientes': typeof ClientesClientesRoute
   '/equipamentos': typeof EquipamentosEquipamentosRoute
+  '/estoque': typeof EstoqueEstoqueRoute
   '/orcamento': typeof OrcamentoOrcamentoRoute
   '/ordemServico': typeof Ordem_servicoOrdemServicoRoute
   '/login': typeof UsuarioLoginRoute
@@ -78,6 +86,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_clientes/clientes': typeof ClientesClientesRoute
   '/_equipamentos/equipamentos': typeof EquipamentosEquipamentosRoute
+  '/_estoque/estoque': typeof EstoqueEstoqueRoute
   '/_orcamento/orcamento': typeof OrcamentoOrcamentoRoute
   '/_ordem_servico/ordemServico': typeof Ordem_servicoOrdemServicoRoute
   '/_usuario/login': typeof UsuarioLoginRoute
@@ -89,6 +98,7 @@ export interface FileRouteTypes {
     | '/'
     | '/clientes'
     | '/equipamentos'
+    | '/estoque'
     | '/orcamento'
     | '/ordemServico'
     | '/login'
@@ -98,6 +108,7 @@ export interface FileRouteTypes {
     | '/'
     | '/clientes'
     | '/equipamentos'
+    | '/estoque'
     | '/orcamento'
     | '/ordemServico'
     | '/login'
@@ -107,6 +118,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_clientes/clientes'
     | '/_equipamentos/equipamentos'
+    | '/_estoque/estoque'
     | '/_orcamento/orcamento'
     | '/_ordem_servico/ordemServico'
     | '/_usuario/login'
@@ -117,6 +129,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ClientesClientesRoute: typeof ClientesClientesRoute
   EquipamentosEquipamentosRoute: typeof EquipamentosEquipamentosRoute
+  EstoqueEstoqueRoute: typeof EstoqueEstoqueRoute
   OrcamentoOrcamentoRoute: typeof OrcamentoOrcamentoRoute
   Ordem_servicoOrdemServicoRoute: typeof Ordem_servicoOrdemServicoRoute
   UsuarioLoginRoute: typeof UsuarioLoginRoute
@@ -144,6 +157,13 @@ declare module '@tanstack/react-router' {
       path: '/equipamentos'
       fullPath: '/equipamentos'
       preLoaderRoute: typeof EquipamentosEquipamentosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_estoque/estoque': {
+      id: '/_estoque/estoque'
+      path: '/estoque'
+      fullPath: '/estoque'
+      preLoaderRoute: typeof EstoqueEstoqueRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_orcamento/orcamento': {
@@ -181,6 +201,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ClientesClientesRoute: ClientesClientesRoute,
   EquipamentosEquipamentosRoute: EquipamentosEquipamentosRoute,
+  EstoqueEstoqueRoute: EstoqueEstoqueRoute,
   OrcamentoOrcamentoRoute: OrcamentoOrcamentoRoute,
   Ordem_servicoOrdemServicoRoute: Ordem_servicoOrdemServicoRoute,
   UsuarioLoginRoute: UsuarioLoginRoute,
