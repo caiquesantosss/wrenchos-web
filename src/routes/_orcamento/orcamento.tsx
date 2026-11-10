@@ -1,45 +1,75 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { useState, useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { Search, Plus, Clock, CheckCircle2, Wallet, AlertTriangle } from 'lucide-react'
-import { SummaryCard } from '../../components/cards'
-import { getAllOrders } from '../../features/orders/api/orders-request'
-import styles from './orcamento.module.css'
+import { createFileRoute } from "@tanstack/react-router"
+import { useState, useMemo } from "react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import {
+  Search,
+  Plus,
+  Clock,
+  CheckCircle2,
+  Wallet,
+  AlertTriangle,
+  X,
+  Check,
+} from "lucide-react"
 
-export const Route = createFileRoute('/_orcamento/orcamento')({
+import { SummaryCard } from "../../components/cards"
+import {
+  getAllOrders,
+  StartExecution,
+  type OrdemServicoDTO,
+} from "../../features/orders/api/orders-request"
+
+import styles from "./orcamento.module.css"
+
+export const Route = createFileRoute("/_orcamento/orcamento")({
   component: RouteComponent,
 })
 
 const ITEMS_PER_PAGE = 5
 
 export default function RouteComponent() {
-  const [searchTerm, setSearchTerm] = useState('')
+  const queryClient = useQueryClient()
+
+  const [searchTerm, setSearchTerm] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
 
-  // 1. Busca todas as Ordens de Serviço
+  const [selectedOrcamento, setSelectedOrcamento] =
+    useState<OrdemServicoDTO | null>(null)
+
+  const [isModalOpen, setIsModalOpen] = useState(false)
+
   const {
     data: todasOrdens = [],
     isLoading,
     isError,
   } = useQuery({
-    queryKey: ['ordens', 'todas'],
+    queryKey: ["ordens", "todas"],
     queryFn: getAllOrders,
   })
 
-  // 2. Filtra APENAS as que interessam para o módulo de Orçamentos
+  // Mutation para iniciar a execução da Ordem de Serviço
+  const startExecutionMutation = useMutation({
+    mutationFn: (idOrdem: number) => StartExecution(idOrdem),
+
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["ordens", "todas"],
+      })
+
+      handleCloseModal()
+    },
+  })
+
   const orcamentos = useMemo(() => {
     return todasOrdens.filter(
-      os => os.status === 'AGUARDANDO_APROVACAO' || os.status === 'EM_EXECUCAO'
+      (os) =>
+        os.status === "AGUARDANDO_APROVACAO" ||
+        os.status === "EM_EXECUCAO",
     )
   }, [todasOrdens])
 
-  // ==========================================
-  // LÓGICA DOS CARTÕES DE RESUMO (SUMMARY CARDS)
-  // ==========================================
-
-  // 1. Aguardando aprovação
   const aguardandoAprovacao = useMemo(
-    () => orcamentos.filter(o => o.status === 'AGUARDANDO_APROVACAO'),
+    () => orcamentos.filter((o) => o.status === "AGUARDANDO_APROVACAO"),
     [orcamentos],
   )
 
@@ -48,9 +78,8 @@ export default function RouteComponent() {
     0,
   )
 
-  // 2. Orçamentos Aprovados (EM_EXECUCAO) - Correção aplicada aqui!
   const orcamentosAprovados = useMemo(
-    () => orcamentos.filter(o => o.status === 'EM_EXECUCAO'),
+    () => orcamentos.filter((o) => o.status === "EM_EXECUCAO"),
     [orcamentos],
   )
 
@@ -59,39 +88,42 @@ export default function RouteComponent() {
     0,
   )
 
-  // 3. Expiram hoje (Simulação baseada na data de previsão)
   const hojeStr = new Date().toISOString().slice(0, 10)
 
   const expiramHoje = useMemo(
     () =>
       aguardandoAprovacao.filter(
-        o =>
+        (o) =>
           o.data_previsao &&
           new Date(o.data_previsao).toISOString().slice(0, 10) === hojeStr,
       ),
     [aguardandoAprovacao, hojeStr],
   )
 
-  // ==========================================
-  // LÓGICA DA TABELA E PESQUISA
-  // ==========================================
-
   const filteredOrcamentos = useMemo(() => {
-    return orcamentos.filter(orc => {
+    return orcamentos.filter((orc) => {
       const search = searchTerm.toLowerCase().trim()
-
       const orcNumber = `ORC-${orc.id_ordem_servico}`.toLowerCase()
-      const clientName = orc.cliente?.nome.toLowerCase() || ''
-      
-      return orcNumber.includes(search) || clientName.includes(search)
+      const clientName = orc.cliente?.nome.toLowerCase() || ""
+
+      return (
+        orcNumber.includes(search) ||
+        clientName.includes(search)
+      )
     })
   }, [orcamentos, searchTerm])
 
-  const totalPages = Math.ceil(filteredOrcamentos.length / ITEMS_PER_PAGE)
+  const totalPages = Math.ceil(
+    filteredOrcamentos.length / ITEMS_PER_PAGE,
+  )
 
   const paginatedOrcamentos = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
-    return filteredOrcamentos.slice(startIndex, startIndex + ITEMS_PER_PAGE)
+
+    return filteredOrcamentos.slice(
+      startIndex,
+      startIndex + ITEMS_PER_PAGE,
+    )
   }, [filteredOrcamentos, currentPage])
 
   const handleSearch = (value: string) => {
@@ -100,33 +132,47 @@ export default function RouteComponent() {
   }
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
     }).format(value)
   }
 
   const formatDate = (dateString?: string | null) => {
-    if (!dateString) return 'Sem validade'
-    return new Intl.DateTimeFormat('pt-BR').format(new Date(dateString))
+    if (!dateString) return "Sem validade"
+
+    return new Intl.DateTimeFormat("pt-BR").format(
+      new Date(dateString),
+    )
   }
 
-  // Define as cores com base no status da OS
   const getStatusBadge = (statusOS: string) => {
-    if (statusOS === 'AGUARDANDO_APROVACAO') {
+    if (statusOS === "AGUARDANDO_APROVACAO") {
       return {
-        label: 'Aguardando aprovação',
+        label: "Aguardando aprovação",
         style: styles.statusOrange,
         dot: styles.dotOrange,
       }
     }
-    
-    // Tratamos o "EM_EXECUCAO" como Aprovado
+
     return {
-      label: 'Aprovado',
+      label: "Aprovado",
       style: styles.statusGreen,
       dot: styles.dotGreen,
     }
+  }
+
+  const handleOpenModal = (orcamento: OrdemServicoDTO) => {
+    setSelectedOrcamento(orcamento)
+    setIsModalOpen(true)
+  }
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false)
+
+    setTimeout(() => {
+      setSelectedOrcamento(null)
+    }, 200)
   }
 
   return (
@@ -148,7 +194,7 @@ export default function RouteComponent() {
           iconTheme="green"
           value={orcamentosAprovados.length}
           isLoading={isLoading}
-          footerText="Propostas aceites"
+          footerText="Propostas aceitas"
           footerTheme="gray"
         />
 
@@ -159,8 +205,8 @@ export default function RouteComponent() {
           valuePrefix="R$ "
           value={
             isLoading
-              ? '...'
-              : valorAprovadoTotal.toLocaleString('pt-BR', {
+              ? "..."
+              : valorAprovadoTotal.toLocaleString("pt-BR", {
                   minimumFractionDigits: 2,
                 })
           }
@@ -177,7 +223,7 @@ export default function RouteComponent() {
           footerText={
             expiramHoje.length > 0
               ? `ORC-${expiramHoje[0].id_ordem_servico} em risco`
-              : 'Nenhum orçamento expira hoje'
+              : "Nenhum orçamento expira hoje"
           }
           footerTheme="red"
         />
@@ -187,16 +233,18 @@ export default function RouteComponent() {
         <div className={styles.searchContainer}>
           <div className={styles.search}>
             <Search size={17} />
+
             <input
               type="text"
               placeholder="Pesquisar orçamento ou cliente"
               value={searchTerm}
-              onChange={e => handleSearch(e.target.value)}
+              onChange={(e) => handleSearch(e.target.value)}
             />
           </div>
 
           <button className={styles.newButton} type="button">
-            <Plus size={18} /> Novo orçamento
+            <Plus size={18} />
+            Novo orçamento
           </button>
         </div>
 
@@ -211,27 +259,42 @@ export default function RouteComponent() {
           </div>
 
           {isLoading ? (
-            <div className={styles.emptyMessage}>Carregando orçamentos...</div>
+            <div className={styles.emptyMessage}>
+              Carregando orçamentos...
+            </div>
           ) : isError ? (
-            <div className={styles.emptyMessage}>Erro ao carregar dados.</div>
+            <div className={styles.emptyMessage}>
+              Erro ao carregar dados.
+            </div>
           ) : paginatedOrcamentos.length === 0 ? (
             <div className={styles.emptyMessage}>
               Nenhum orçamento encontrado.
             </div>
           ) : (
             <div className={styles.tableList}>
-              {paginatedOrcamentos.map(orc => {
+              {paginatedOrcamentos.map((orc) => {
                 const badge = getStatusBadge(orc.status)
 
                 return (
-                  <div key={orc.id_ordem_servico} className={styles.tableRow}>
+                  <div
+                    key={orc.id_ordem_servico}
+                    className={styles.tableRow}
+                  >
                     <div className={styles.colOrcamento}>
-                      <strong>ORC-{orc.id_ordem_servico}</strong>
+                      <strong>
+                        ORC-{orc.id_ordem_servico}
+                      </strong>
                     </div>
 
                     <div className={styles.colCliente}>
-                      <strong>{orc.cliente?.nome || 'Cliente não informado'}</strong>
-                      <span>{orc.ativo?.descricao || `OS-${orc.id_ordem_servico}`}</span>
+                      <strong>
+                        {orc.cliente?.nome || "Cliente não informado"}
+                      </strong>
+
+                      <span>
+                        {orc.ativo?.descricao ||
+                          `OS-${orc.id_ordem_servico}`}
+                      </span>
                     </div>
 
                     <div className={styles.colValidade}>
@@ -239,8 +302,13 @@ export default function RouteComponent() {
                     </div>
 
                     <div className={styles.colStatus}>
-                      <span className={`${styles.statusBadge} ${badge.style}`}>
-                        <span className={`${styles.statusDot} ${badge.dot}`} />
+                      <span
+                        className={`${styles.statusBadge} ${badge.style}`}
+                      >
+                        <span
+                          className={`${styles.statusDot} ${badge.dot}`}
+                        />
+
                         {badge.label}
                       </span>
                     </div>
@@ -250,7 +318,10 @@ export default function RouteComponent() {
                     </div>
 
                     <div className={styles.colActions}>
-                      <button className={styles.consultBtn}>
+                      <button
+                        className={styles.consultBtn}
+                        onClick={() => handleOpenModal(orc)}
+                      >
                         Consultar ↗
                       </button>
                     </div>
@@ -262,9 +333,12 @@ export default function RouteComponent() {
 
           <div className={styles.footer}>
             <span className={styles.footerText}>
-              {filteredOrcamentos.length}{' '}
-              {filteredOrcamentos.length === 1 ? 'registro' : 'registros'} ·
-              Página {filteredOrcamentos.length === 0 ? 0 : currentPage} de{' '}
+              {filteredOrcamentos.length}{" "}
+              {filteredOrcamentos.length === 1
+                ? "registro"
+                : "registros"}{" "}
+              · Página{" "}
+              {filteredOrcamentos.length === 0 ? 0 : currentPage} de{" "}
               {totalPages}
             </span>
 
@@ -273,7 +347,7 @@ export default function RouteComponent() {
                 type="button"
                 className={styles.pageButton}
                 disabled={currentPage <= 1}
-                onClick={() => setCurrentPage(p => p - 1)}
+                onClick={() => setCurrentPage((p) => p - 1)}
               >
                 ‹
               </button>
@@ -285,8 +359,10 @@ export default function RouteComponent() {
               <button
                 type="button"
                 className={styles.pageButton}
-                disabled={currentPage >= totalPages || totalPages === 0}
-                onClick={() => setCurrentPage(p => p + 1)}
+                disabled={
+                  currentPage >= totalPages || totalPages === 0
+                }
+                onClick={() => setCurrentPage((p) => p + 1)}
               >
                 ›
               </button>
@@ -294,6 +370,128 @@ export default function RouteComponent() {
           </div>
         </div>
       </div>
+
+      {/* Modal de consulta do orçamento */}
+      {isModalOpen && selectedOrcamento && (
+        <div
+          className={styles.modalOverlay}
+          onClick={handleCloseModal}
+        >
+          <div
+            className={styles.orcamentoModalContent}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className={styles.orcamentoHeader}>
+              <div>
+                <h2>
+                  Orçamento • OS-{selectedOrcamento.id_ordem_servico}
+                </h2>
+
+                <p>
+                  {selectedOrcamento.cliente?.nome} •{" "}
+                  {selectedOrcamento.ativo?.descricao}
+                </p>
+              </div>
+
+              <button
+                className={styles.closeButton}
+                onClick={handleCloseModal}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className={styles.orcamentoBody}>
+              <table className={styles.orcamentoTable}>
+                <thead>
+                  <tr>
+                    <th>DESCRIÇÃO</th>
+                    <th>QTD.</th>
+                    <th>UNITÁRIO</th>
+                    <th>TOTAL</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {Number(selectedOrcamento.valor_mao_obra) > 0 && (
+                    <tr>
+                      <td>Mão de obra</td>
+                      <td>1</td>
+
+                      <td>
+                        {formatCurrency(
+                          Number(selectedOrcamento.valor_mao_obra),
+                        )}
+                      </td>
+
+                      <td>
+                        {formatCurrency(
+                          Number(selectedOrcamento.valor_mao_obra),
+                        )}
+                      </td>
+                    </tr>
+                  )}
+
+                  {selectedOrcamento.itens_os?.map((item) => (
+                    <tr key={item.id_item_os}>
+                      <td>
+                        {item.catalogo_item?.descricao || "Peça/Item"}
+                      </td>
+
+                      <td>{item.quantidade}</td>
+
+                      <td>
+                        {formatCurrency(Number(item.valor_unitario))}
+                      </td>
+
+                      <td>
+                        {formatCurrency(Number(item.valor_total))}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              <div className={styles.orcamentoTotal}>
+                Total{" "}
+                {formatCurrency(
+                  Number(selectedOrcamento.valor_total),
+                )}
+              </div>
+            </div>
+
+            <div className={styles.orcamentoFooter}>
+              <button
+                className={styles.btnSecondary}
+                onClick={handleCloseModal}
+              >
+                Fechar
+              </button>
+
+              <button
+                className={styles.btnApprove}
+                onClick={() =>
+                  startExecutionMutation.mutate(
+                    selectedOrcamento.id_ordem_servico,
+                  )
+                }
+                disabled={
+                  startExecutionMutation.isPending ||
+                  selectedOrcamento.status === "EM_EXECUCAO"
+                }
+              >
+                <Check size={16} />
+
+                {startExecutionMutation.isPending
+                  ? "Iniciando execução..."
+                  : selectedOrcamento.status === "EM_EXECUCAO"
+                    ? "Execução iniciada"
+                    : "Iniciar execução"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

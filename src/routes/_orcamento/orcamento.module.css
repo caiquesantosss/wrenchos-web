@@ -310,6 +310,170 @@
   text-align: center;
 }
 
+/* --- ESTILOS DO MODAL DE ORÇAMENTO --- */
+
+.orcamentoModalContent {
+  max-width: 650px;
+}
+
+.orcamentoHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.5rem 1.5rem 1rem 1.5rem;
+  background-color: #ffffff;
+}
+
+.orcamentoHeader h2 {
+  margin: 0 0 0.25rem;
+  color: #0f172a;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.orcamentoHeader p {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+.orcamentoBody {
+  padding: 0 1.5rem;
+}
+
+.orcamentoTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+}
+
+.orcamentoTable th {
+  text-align: left;
+  padding: 0.75rem 1rem;
+  color: #64748b;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  background-color: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.orcamentoTable td {
+  padding: 1rem;
+  color: #0f172a;
+  font-size: 0.875rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.orcamentoTotal {
+  display: flex;
+  justify-content: flex-end;
+  padding: 2rem 1rem;
+  color: #0f172a;
+  font-size: 1.5rem;
+  font-weight: 500;
+  font-family: monospace; /* Traz o aspecto de recibo / numero tabulado */
+}
+
+.orcamentoFooter {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem;
+  background-color: #ffffff;
+  border-top: 1px solid #e2e8f0;
+}
+
+.btnSecondary {
+  padding: 0.65rem 1.25rem;
+  color: #475569;
+  font-size: 0.875rem;
+  font-weight: 600;
+  background-color: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btnSecondary:hover:not(:disabled) {
+  background-color: #e2e8f0;
+}
+
+.btnApprove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.25rem;
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  background-color: #0d9488;
+  border: none;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btnApprove:hover:not(:disabled) {
+  background-color: #0f766e;
+}
+
+.btnApprove:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(15, 23, 42, 0.5); 
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.orcamentoModalContent {
+  width: 100%;
+  max-width: 650px;
+  background-color: #ffffff;
+  border-radius: 0.5rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  animation: modalFadeIn 0.2s ease-out;
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  transition: color 0.2s;
+}
+
+.closeButton:hover {
+  color: #0f172a;
+}
+
+
 @media (max-width: 1200px) {
   .cardsGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));

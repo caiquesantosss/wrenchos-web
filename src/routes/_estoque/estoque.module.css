@@ -482,6 +482,7 @@
     }
 }
 
+
 @media (max-width: 600px) {
     .pagination {
         flex-direction: column;
