@@ -1,7 +1,6 @@
-
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useMemo, useEffect } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Search,
   Plus,
@@ -11,9 +10,16 @@ import {
   ArrowRight,
   ChevronLeft,
   ChevronRight,
+  X
 } from 'lucide-react'
 import { SummaryCard } from '../../components/cards'
-import { allCatalogItems } from '../../features/items/catalogo/api/catalogo_items'
+import { 
+  allCatalogItems, 
+  createCatalogoItem, 
+  entradaEstoque, 
+  saidaEstoque,
+  type CatalogoItemDTO
+} from '../../features/items/catalogo/api/catalogo_items'
 import styles from './estoque.module.css'
 
 export const Route = createFileRoute('/_estoque/estoque')({
@@ -21,10 +27,18 @@ export const Route = createFileRoute('/_estoque/estoque')({
 })
 
 export default function RouteComponent() {
+  const queryClient = useQueryClient()
+
   const [activeTab, setActiveTab] = useState<'pecas' | 'movimentacoes'>('pecas')
   const [searchTerm, setSearchTerm] = useState('')
   const [filterType, setFilterType] = useState('todos')
   const [currentPage, setCurrentPage] = useState(1)
+
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [selectedItemToMove, setSelectedItemToMove] = useState<CatalogoItemDTO | null>(null)
+  
+  const [moveType, setMoveType] = useState<'entrada' | 'saida'>('entrada')
+  const [moveQty, setMoveQty] = useState<number | ''>('')
 
   const itemsPerPage = 5
 
@@ -35,6 +49,27 @@ export default function RouteComponent() {
   } = useQuery({
     queryKey: ['catalogo-itens', 'todos'],
     queryFn: allCatalogItems,
+  })
+
+  const createMutation = useMutation({
+    mutationFn: createCatalogoItem,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['catalogo-itens', 'todos'] })
+      setIsCreateModalOpen(false)
+    }
+  })
+
+  const moveMutation = useMutation({
+    mutationFn: ({ id, type, data }: { id: number, type: 'entrada' | 'saida', data: { quantidade: number } }) => {
+      if (type === 'entrada') return entradaEstoque(id, data)
+      return saidaEstoque(id, data)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['catalogo-itens', 'todos'] })
+      setSelectedItemToMove(null)
+      setMoveQty('')
+      setMoveType('entrada')
+    }
   })
 
   const produtos = useMemo(
@@ -73,15 +108,12 @@ export default function RouteComponent() {
   const filteredItems = useMemo(() => {
     return itensCatalogo.filter(item => {
       const search = searchTerm.toLowerCase().trim()
-
       const codigoSimulado = `PC-${item.id_catalogo_item
         .toString()
         .padStart(3, '0')}`.toLowerCase()
-
       const matchesSearch =
         item.descricao.toLowerCase().includes(search) ||
         codigoSimulado.includes(search)
-
       const matchesFilter =
         filterType === 'todos' || item.tipo_item === filterType
 
@@ -93,7 +125,6 @@ export default function RouteComponent() {
 
   const paginatedItems = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage
-
     return filteredItems.slice(startIndex, startIndex + itemsPerPage)
   }, [filteredItems, currentPage])
 
@@ -116,7 +147,6 @@ export default function RouteComponent() {
     }
   }, [currentPage, totalPages])
 
-
   const getStatusBadge = (
     atual: number,
     minimo: number,
@@ -129,7 +159,6 @@ export default function RouteComponent() {
         dot: styles.dotBlue,
       }
     }
-
     if (atual <= 0 || atual < minimo) {
       return {
         label: 'Estoque baixo',
@@ -137,13 +166,45 @@ export default function RouteComponent() {
         dot: styles.dotRed,
       }
     }
-
     return {
       label: 'Disponível',
       style: styles.statusGreen,
       dot: styles.dotGreen,
     }
   }
+
+  const handleCreateSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const formData = new FormData(e.currentTarget)
+    
+    createMutation.mutate({
+      descricao: formData.get("nome") as string,
+      tipo_item: "PRODUTO",
+      unidade: formData.get("categoria") as string || "un", 
+      estoque_atual: Number(formData.get("saldo_inicial")),
+      estoque_minimo: Number(formData.get("estoque_minimo")),
+      valor_unitario: Number(formData.get("custo_unitario")),
+    })
+  }
+
+  const handleMoveSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (!selectedItemToMove || !moveQty) return
+    
+    moveMutation.mutate({
+      id: selectedItemToMove.id_catalogo_item,
+      type: moveType,
+      data: { quantidade: Number(moveQty) }
+    })
+  }
+
+  const isMoveDisabled = useMemo(() => {
+    if (!moveQty || Number(moveQty) <= 0) return true
+    if (moveType === 'saida' && selectedItemToMove) {
+      return Number(moveQty) > selectedItemToMove.estoque_atual
+    }
+    return false
+  }, [moveQty, moveType, selectedItemToMove])
 
   return (
     <div className={styles.container}>
@@ -156,7 +217,6 @@ export default function RouteComponent() {
           isLoading={isLoading}
           footerText="Peças e produtos"
         />
-
         <SummaryCard
           title="Abaixo do mínimo"
           icon={<AlertTriangle size={18} />}
@@ -166,7 +226,6 @@ export default function RouteComponent() {
           footerText="Reposição necessária"
           footerTheme="orange"
         />
-
         <SummaryCard
           title="Sem estoque"
           icon={<Package size={18} />}
@@ -176,7 +235,6 @@ export default function RouteComponent() {
           footerText="Prioridade de compra"
           footerTheme="red"
         />
-
         <SummaryCard
           title="Valor em estoque"
           icon={<Wallet size={18} />}
@@ -206,7 +264,6 @@ export default function RouteComponent() {
             >
               Peças e produtos
             </button>
-
             <button
               type="button"
               className={`${styles.tabBtn} ${
@@ -217,8 +274,11 @@ export default function RouteComponent() {
               Movimentações
             </button>
           </div>
-
-          <button className={styles.newButton} type="button">
+          <button 
+            className={styles.newButton} 
+            type="button"
+            onClick={() => setIsCreateModalOpen(true)}
+          >
             <Plus size={18} />
             Novo produto
           </button>
@@ -229,7 +289,6 @@ export default function RouteComponent() {
             <div className={styles.searchContainer}>
               <div className={styles.search}>
                 <Search size={17} />
-
                 <input
                   type="text"
                   placeholder="Pesquisar peça ou código"
@@ -237,7 +296,6 @@ export default function RouteComponent() {
                   onChange={e => setSearchTerm(e.target.value)}
                 />
               </div>
-
               <select
                 className={styles.filterSelect}
                 value={filterType}
@@ -280,7 +338,6 @@ export default function RouteComponent() {
                         item.estoque_minimo,
                         item.tipo_item,
                       )
-
                       const codigo = `PC-${item.id_catalogo_item
                         .toString()
                         .padStart(3, '0')}`
@@ -294,23 +351,19 @@ export default function RouteComponent() {
                             <strong>{item.descricao}</strong>
                             <span>{codigo}</span>
                           </div>
-
                           <div className={styles.colCategoria}>
                             {item.tipo_item}
                           </div>
-
                           <div className={styles.colQtd}>
                             {item.tipo_item === 'SERVICO'
                               ? '—'
                               : `${item.estoque_atual} ${item.unidade}`}
                           </div>
-
                           <div className={styles.colQtd}>
                             {item.tipo_item === 'SERVICO'
                               ? '—'
                               : `${item.estoque_minimo} ${item.unidade}`}
                           </div>
-
                           <div className={styles.colStatus}>
                             <span
                               className={`${styles.statusBadge} ${badge.style}`}
@@ -321,12 +374,12 @@ export default function RouteComponent() {
                               {badge.label}
                             </span>
                           </div>
-
                           <div className={styles.colActions}>
                             {item.tipo_item === 'PRODUTO' && (
                               <button
                                 type="button"
                                 className={styles.movimentarBtn}
+                                onClick={() => setSelectedItemToMove(item)}
                               >
                                 Movimentar
                                 <ArrowRight size={16} />
@@ -349,7 +402,6 @@ export default function RouteComponent() {
                         className={styles.paginationButton}
                         onClick={() => setCurrentPage(page => page - 1)}
                         disabled={currentPage === 1}
-                        aria-label="Página anterior"
                       >
                         <ChevronLeft size={18} />
                       </button>
@@ -367,9 +419,6 @@ export default function RouteComponent() {
                               : ''
                           }`}
                           onClick={() => setCurrentPage(page)}
-                          aria-current={
-                            currentPage === page ? 'page' : undefined
-                          }
                         >
                           {page}
                         </button>
@@ -380,7 +429,6 @@ export default function RouteComponent() {
                         className={styles.paginationButton}
                         onClick={() => setCurrentPage(page => page + 1)}
                         disabled={currentPage === totalPages}
-                        aria-label="Próxima página"
                       >
                         <ChevronRight size={18} />
                       </button>
@@ -399,18 +447,121 @@ export default function RouteComponent() {
                 <span>QUANTIDADE</span>
                 <span>DATA</span>
               </div>
-
               <div className={styles.emptyStateBox}>
                 <Search size={32} className={styles.emptyIcon} />
                 <strong>Nenhum resultado encontrado</strong>
-                <p>
-                  Não há registros para os filtros selecionados.
-                </p>
+                <p>Não há registros para os filtros selecionados.</p>
               </div>
             </div>
           </div>
         )}
       </div>
+
+      {isCreateModalOpen && (
+        <div className={styles.modalOverlay} onClick={() => setIsCreateModalOpen(false)}>
+          <div className={styles.modalContentCreate} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <div className={styles.modalTitles}>
+                <h2>Novo produto</h2>
+                <p>Cadastro de peças e materiais da oficina.</p>
+              </div>
+              <button className={styles.closeButton} onClick={() => setIsCreateModalOpen(false)}>
+                <X size={20} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleCreateSubmit} className={styles.modalForm}>
+              <div className={styles.formRow}>
+                <div className={styles.formGroup} style={{ flex: 1 }}>
+                  <label>Nome *</label>
+                  <input type="text" name="nome" required />
+                </div>
+                <div className={styles.formGroup} style={{ flex: 1 }}>
+                  <label>Categoria *</label>
+                  <input type="text" name="categoria" required />
+                </div>
+              </div>
+              
+              <div className={styles.formRow}>
+                <div className={styles.formGroup} style={{ flex: 1 }}>
+                  <label>Estoque atual</label>
+                  <input type="number" name="saldo_inicial" required min="0" defaultValue="0" />
+                </div>
+                <div className={styles.formGroup} style={{ flex: 1 }}>
+                  <label>Estoque mínimo</label>
+                  <input type="number" name="estoque_minimo" required min="0" defaultValue="0" />
+                </div>
+              </div>
+              
+              <div className={styles.formRowLast}>
+                <div className={styles.formGroup} style={{ width: '48%' }}>
+                  <label>Custo unitário (R$)</label>
+                  <input type="number" name="custo_unitario" step="0.01" required min="0" />
+                </div>
+                <div className={styles.submitContainer}>
+                  <button type="submit" className={styles.btnPrimary} disabled={createMutation.isPending}>
+                    {createMutation.isPending ? 'Cadastrando...' : 'Cadastrar produto'}
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {selectedItemToMove && (
+        <div className={styles.modalOverlay} onClick={() => setSelectedItemToMove(null)}>
+          <div className={styles.modalContentMove} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <div className={styles.modalTitles}>
+                <h2>Movimentar estoque</h2>
+                <p>{selectedItemToMove.descricao} • Disponível: {selectedItemToMove.estoque_atual} {selectedItemToMove.unidade}</p>
+              </div>
+              <button className={styles.closeButton} onClick={() => setSelectedItemToMove(null)}>
+                <X size={20} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleMoveSubmit} className={styles.modalForm}>
+              <div className={styles.formRow}>
+                <div className={styles.formGroup} style={{ flex: 1 }}>
+                  <label>Tipo</label>
+                  <select 
+                    value={moveType} 
+                    onChange={e => setMoveType(e.target.value as 'entrada' | 'saida')}
+                    className={styles.selectInput}
+                  >
+                    <option value="entrada">Entrada</option>
+                    <option value="saida">Saída</option>
+                  </select>
+                </div>
+                <div className={styles.formGroup} style={{ flex: 1 }}>
+                  <label>Quantidade *</label>
+                  <input 
+                    type="number" 
+                    value={moveQty} 
+                    onChange={e => setMoveQty(e.target.value ? Number(e.target.value) : '')} 
+                    required 
+                    min="1"
+                    className={moveType === 'saida' && Number(moveQty) > selectedItemToMove.estoque_atual ? styles.inputError : ''}
+                  />
+                </div>
+              </div>
+              
+              <div className={styles.formRowLastMove}>
+                <button 
+                  type="submit" 
+                  className={styles.btnPrimaryMove} 
+                  disabled={isMoveDisabled || moveMutation.isPending}
+                >
+                  {moveMutation.isPending ? 'Confirmando...' : 'Confirmar movimentação'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }

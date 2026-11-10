@@ -140,11 +140,6 @@ export default function SideBar() {
             <ShieldCheck size={17} />
             <span>Usuários e permissões</span>
           </button>
-
-          <button className={styles.navItem} type="button">
-            <Settings size={17} />
-            <span>Configurações</span>
-          </button>
         </div>
       </nav>
 

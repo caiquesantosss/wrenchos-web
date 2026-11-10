@@ -330,6 +330,313 @@
     }
 }
 
+.modalOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background-color: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(3px);
+    animation: fadeIn 0.2s ease;
+}
+
+.paymentModal {
+    width: 100%;
+    max-width: 480px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    background-color: #ffffff;
+    box-shadow: 0 20px 50px rgba(15, 23, 42, 0.2);
+    animation: modalEnter 0.2s ease;
+}
+
+.modalHeader {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.5rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.modalTitleGroup {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+}
+
+.modalIcon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
+    border-radius: 0.75rem;
+    background-color: #ecfdf5;
+    color: #047857;
+}
+
+.modalTitleGroup h2 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 1.125rem;
+    font-weight: 700;
+}
+
+.modalTitleGroup p {
+    margin: 0.35rem 0 0;
+    color: #64748b;
+    font-size: 0.8125rem;
+}
+
+.modalCloseButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    border: none;
+    border-radius: 0.5rem;
+    background: transparent;
+    color: #64748b;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.modalCloseButton:hover:not(:disabled) {
+    background-color: #f1f5f9;
+    color: #0f172a;
+}
+
+.modalCloseButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.modalBody {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    padding: 1.5rem;
+}
+
+.paymentSummary {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding: 1.125rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    background-color: #f8fafc;
+}
+
+.summaryLabel {
+    color: #64748b;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.paymentSummary strong {
+    overflow-wrap: anywhere;
+    color: #0f172a;
+    font-size: 0.9375rem;
+    font-weight: 600;
+}
+
+.paymentSummary > span:not(.summaryLabel) {
+    color: #94a3b8;
+    font-size: 0.8125rem;
+}
+
+.paymentAmount {
+    margin-top: 0.5rem;
+    color: #047857;
+    font-size: 1.5rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.paymentFormGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.paymentFormGroup label {
+    color: #334155;
+    font-size: 0.8125rem;
+    font-weight: 600;
+}
+
+.paymentFormGroup select {
+    width: 100%;
+    padding: 0.8rem 0.875rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.625rem;
+    outline: none;
+    background-color: #ffffff;
+    color: #0f172a;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.paymentFormGroup select:focus {
+    border-color: #0d9488;
+    box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1);
+}
+
+.paymentFormGroup select:disabled {
+    background-color: #f8fafc;
+    cursor: not-allowed;
+}
+
+.paymentNotice {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.625rem;
+    padding: 0.875rem;
+    border: 1px solid #a7f3d0;
+    border-radius: 0.625rem;
+    background-color: #ecfdf5;
+    color: #047857;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+}
+
+.paymentNotice svg {
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+.paymentError {
+    padding: 0.75rem;
+    border: 1px solid #fecaca;
+    border-radius: 0.625rem;
+    background-color: #fef2f2;
+    color: #b91c1c;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+}
+
+.modalFooter {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding: 1.25rem 1.5rem;
+    border-top: 1px solid #e2e8f0;
+    background-color: #f8fafc;
+}
+
+.cancelButton,
+.confirmPaymentButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 40px;
+    padding: 0.65rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.cancelButton {
+    border: 1px solid #e2e8f0;
+    background-color: #ffffff;
+    color: #475569;
+}
+
+.cancelButton:hover:not(:disabled) {
+    border-color: #cbd5e1;
+    background-color: #f1f5f9;
+}
+
+.confirmPaymentButton {
+    border: 1px solid #047857;
+    background-color: #047857;
+    color: #ffffff;
+}
+
+.confirmPaymentButton:hover:not(:disabled) {
+    border-color: #065f46;
+    background-color: #065f46;
+}
+
+.cancelButton:disabled,
+.confirmPaymentButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.spinning {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes modalEnter {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@media (max-width: 480px) {
+    .modalOverlay {
+        align-items: flex-end;
+        padding: 0;
+    }
+
+    .paymentModal {
+        max-width: none;
+        border-radius: 1rem 1rem 0 0;
+        animation: modalEnter 0.2s ease;
+    }
+
+    .modalHeader,
+    .modalBody {
+        padding: 1.25rem;
+    }
+
+    .modalFooter {
+        padding: 1rem 1.25rem;
+    }
+
+    .modalFooter button {
+        flex: 1;
+    }
+}
+
 @media (max-width: 480px) {
     .container {
         padding: 0.75rem;

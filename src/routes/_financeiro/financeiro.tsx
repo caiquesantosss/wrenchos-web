@@ -1,33 +1,69 @@
+import { createFileRoute } from "@tanstack/react-router"
+import { useState, useMemo } from "react"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 
-import { createFileRoute } from '@tanstack/react-router'
-import { useState, useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import {
   Search,
   Wallet,
   FileText,
   Clock,
   Package,
-} from 'lucide-react'
-import { SummaryCard } from '../../components/cards'
-import { getAllFinanceiroWithOS } from '../../features/finance/api/financeiro'
-import { getAllOrders } from '../../features/orders/api/orders-request'
-import styles from './financeiro.module.css'
+  X,
+  CheckCircle2,
+  Loader2,
+} from "lucide-react"
 
-export const Route = createFileRoute('/_financeiro/financeiro')({
+import { SummaryCard } from "../../components/cards"
+
+import {
+  getAllFinanceiroWithOS,
+  pagarFinanceiro,
+  type MetodoPagamentoDTO,
+  type PagarFinanceiroDTO,
+} from "../../features/finance/api/financeiro"
+
+import { getAllOrders } from "../../features/orders/api/orders-request"
+
+import styles from "./financeiro.module.css"
+
+export const Route = createFileRoute("/_financeiro/financeiro")({
   component: RouteComponent,
 })
 
+type FormaPagamento = MetodoPagamentoDTO
+
+const FORMAS_PAGAMENTO: {
+  value: FormaPagamento
+  label: string
+}[] = [
+  { value: "PIX", label: "PIX" },
+  { value: "DINHEIRO", label: "Dinheiro" },
+  { value: "CARTAO_CREDITO", label: "Cartão de crédito" },
+  { value: "CARTAO_DEBITO", label: "Cartão de débito" },
+  { value: "TRANSFERENCIA", label: "Transferência bancária" },
+]
+
 export default function RouteComponent() {
-  const [activeTab, setActiveTab] = useState<'RECEITA' | 'DESPESA'>('RECEITA')
-  const [searchTerm, setSearchTerm] = useState('')
+  const queryClient = useQueryClient()
+
+  const [activeTab, setActiveTab] = useState<"RECEITA" | "DESPESA">("RECEITA")
+
+  const [searchTerm, setSearchTerm] = useState("")
+
+  const [selectedFinanceiro, setSelectedFinanceiro] = useState<
+    (typeof financeiro)[number] | null
+  >(null)
+
+  const [formaPagamento, setFormaPagamento] = useState<FormaPagamento>("PIX")
+
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   const {
     data: financeiro = [],
     isLoading: isLoadingFinanceiro,
     isError: isErrorFinanceiro,
   } = useQuery({
-    queryKey: ['financeiro', 'com-os'],
+    queryKey: ["financeiro", "com-os"],
     queryFn: getAllFinanceiroWithOS,
   })
 
@@ -36,21 +72,36 @@ export default function RouteComponent() {
     isLoading: isLoadingOrders,
     isError: isErrorOrders,
   } = useQuery({
-    queryKey: ['orders', 'todas'],
+    queryKey: ["orders", "todas"],
     queryFn: getAllOrders,
   })
 
   const orders = allOrders ?? []
+
+  const pagarMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: PagarFinanceiroDTO }) =>
+      pagarFinanceiro(id, data),
+
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["financeiro", "com-os"],
+      })
+
+      setIsModalOpen(false)
+      setSelectedFinanceiro(null)
+      setFormaPagamento("PIX")
+    },
+  })
 
   const mesAtual = new Date().getMonth()
   const anoAtual = new Date().getFullYear()
 
   const receitasMes = useMemo(
     () =>
-      financeiro.filter(f => {
+      financeiro.filter((f) => {
         if (
-          f.tipo_lancamento !== 'RECEITA' ||
-          f.status_pagamento !== 'PAGO' ||
+          f.tipo_lancamento !== "RECEITA" ||
+          f.status_pagamento !== "PAGO" ||
           !f.data_pagamento
         ) {
           return false
@@ -67,49 +118,35 @@ export default function RouteComponent() {
   )
 
   const valorRecebido = useMemo(
-    () =>
-      receitasMes.reduce(
-        (acc, curr) => acc + Number(curr.valor || 0),
-        0,
-      ),
+    () => receitasMes.reduce((acc, curr) => acc + Number(curr.valor || 0), 0),
     [receitasMes],
   )
 
   const aReceber = useMemo(
     () =>
       financeiro.filter(
-        f =>
-          f.tipo_lancamento === 'RECEITA' &&
-          f.status_pagamento === 'PENDENTE',
+        (f) =>
+          f.tipo_lancamento === "RECEITA" && f.status_pagamento === "PENDENTE",
       ),
     [financeiro],
   )
 
   const valorAReceber = useMemo(
-    () =>
-      aReceber.reduce(
-        (acc, curr) => acc + Number(curr.valor || 0),
-        0,
-      ),
+    () => aReceber.reduce((acc, curr) => acc + Number(curr.valor || 0), 0),
     [aReceber],
   )
 
   const vencidos = useMemo(
     () =>
       financeiro.filter(
-        f =>
-          f.tipo_lancamento === 'RECEITA' &&
-          f.status_pagamento === 'ATRASADO',
+        (f) =>
+          f.tipo_lancamento === "RECEITA" && f.status_pagamento === "ATRASADO",
       ),
     [financeiro],
   )
 
   const valorVencidos = useMemo(
-    () =>
-      vencidos.reduce(
-        (acc, curr) => acc + Number(curr.valor || 0),
-        0,
-      ),
+    () => vencidos.reduce((acc, curr) => acc + Number(curr.valor || 0), 0),
     [vencidos],
   )
 
@@ -134,71 +171,95 @@ export default function RouteComponent() {
   const filteredList = useMemo(() => {
     const search = searchTerm.toLowerCase().trim()
 
-    return financeiro.filter(f => {
+    return financeiro.filter((f) => {
       if (f.tipo_lancamento !== activeTab) {
         return false
       }
 
-      const descricao = String(f.descricao ?? '').toLowerCase()
+      const descricao = String(f.descricao ?? "").toLowerCase()
       const osNumber = `os-${f.id_ordem_servico}`.toLowerCase()
 
-      return (
-        descricao.includes(search) ||
-        osNumber.includes(search)
-      )
+      return descricao.includes(search) || osNumber.includes(search)
     })
   }, [financeiro, activeTab, searchTerm])
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
     }).format(value)
   }
 
   const formatDate = (dateString?: string | null) => {
-    if (!dateString) return 'Não definida'
+    if (!dateString) return "Não definida"
 
     const date = new Date(dateString)
 
     if (Number.isNaN(date.getTime())) {
-      return 'Data inválida'
+      return "Data inválida"
     }
 
-    return new Intl.DateTimeFormat('pt-BR').format(date)
+    return new Intl.DateTimeFormat("pt-BR").format(date)
   }
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'PENDENTE':
+      case "PENDENTE":
         return {
-          label: 'Pendente',
+          label: "Pendente",
           style: styles.statusOrange,
           dot: styles.dotOrange,
         }
 
-      case 'PAGO':
+      case "PAGO":
         return {
-          label: 'Pago',
+          label: "Pago",
           style: styles.statusGreen,
           dot: styles.dotGreen,
         }
 
-      case 'ATRASADO':
+      case "ATRASADO":
         return {
-          label: 'Vencido',
+          label: "Vencido",
           style: styles.statusRed,
           dot: styles.dotRed,
         }
 
-      case 'CANCELADO':
+      case "CANCELADO":
       default:
         return {
-          label: 'Cancelado',
+          label: "Cancelado",
           style: styles.statusGray,
           dot: styles.dotGray,
         }
     }
+  }
+
+  const handleOpenPaymentModal = (item: (typeof financeiro)[number]) => {
+    setSelectedFinanceiro(item)
+    setFormaPagamento("PIX")
+    setIsModalOpen(true)
+    pagarMutation.reset()
+  }
+
+  const handleClosePaymentModal = () => {
+    if (pagarMutation.isPending) return
+
+    setIsModalOpen(false)
+    setSelectedFinanceiro(null)
+    setFormaPagamento("PIX")
+    pagarMutation.reset()
+  }
+
+  const handleConfirmPayment = () => {
+    if (!selectedFinanceiro) return
+
+    pagarMutation.mutate({
+      id: selectedFinanceiro.id_financeiro,
+      data: {
+        forma_pagamento: formaPagamento,
+      },
+    })
   }
 
   return (
@@ -209,7 +270,7 @@ export default function RouteComponent() {
           icon={<Wallet size={18} />}
           iconTheme="green"
           valuePrefix="R$ "
-          value={valorRecebido.toLocaleString('pt-BR', {
+          value={valorRecebido.toLocaleString("pt-BR", {
             minimumFractionDigits: 2,
           })}
           isLoading={isLoadingFinanceiro}
@@ -221,7 +282,7 @@ export default function RouteComponent() {
           icon={<FileText size={18} />}
           iconTheme="gray"
           valuePrefix="R$ "
-          value={valorAReceber.toLocaleString('pt-BR', {
+          value={valorAReceber.toLocaleString("pt-BR", {
             minimumFractionDigits: 2,
           })}
           isLoading={isLoadingFinanceiro}
@@ -233,13 +294,13 @@ export default function RouteComponent() {
           icon={<Clock size={18} />}
           iconTheme="red"
           valuePrefix="R$ "
-          value={valorVencidos.toLocaleString('pt-BR', {
+          value={valorVencidos.toLocaleString("pt-BR", {
             minimumFractionDigits: 2,
           })}
           isLoading={isLoadingFinanceiro}
           footerText={
             vencidos.length === 1
-              ? '1 pagamento em atraso'
+              ? "1 pagamento em atraso"
               : `${vencidos.length} pagamentos em atraso`
           }
           footerTheme="red"
@@ -250,7 +311,7 @@ export default function RouteComponent() {
           icon={<Package size={18} />}
           iconTheme="orange"
           valuePrefix="R$ "
-          value={totalCustosOperacionais.toLocaleString('pt-BR', {
+          value={totalCustosOperacionais.toLocaleString("pt-BR", {
             minimumFractionDigits: 2,
           })}
           isLoading={isLoadingOrders}
@@ -265,9 +326,9 @@ export default function RouteComponent() {
             <button
               type="button"
               className={`${styles.tabBtn} ${
-                activeTab === 'RECEITA' ? styles.tabActive : ''
+                activeTab === "RECEITA" ? styles.tabActive : ""
               }`}
-              onClick={() => setActiveTab('RECEITA')}
+              onClick={() => setActiveTab("RECEITA")}
             >
               Contas a receber
             </button>
@@ -275,9 +336,9 @@ export default function RouteComponent() {
             <button
               type="button"
               className={`${styles.tabBtn} ${
-                activeTab === 'DESPESA' ? styles.tabActive : ''
+                activeTab === "DESPESA" ? styles.tabActive : ""
               }`}
-              onClick={() => setActiveTab('DESPESA')}
+              onClick={() => setActiveTab("DESPESA")}
             >
               Contas a pagar
             </button>
@@ -290,7 +351,7 @@ export default function RouteComponent() {
               type="text"
               placeholder="Pesquisar cliente ou ordem"
               value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
         </div>
@@ -318,15 +379,15 @@ export default function RouteComponent() {
             </div>
           ) : (
             <div className={styles.tableList}>
-              {filteredList.map(item => {
+              {filteredList.map((item) => {
                 const badge = getStatusBadge(item.status_pagamento)
-                const isPago = item.status_pagamento === 'PAGO'
+
+                const isPago = item.status_pagamento === "PAGO"
+                const isCancelado = item.status_pagamento === "CANCELADO"
+                const isBloqueado = isPago || isCancelado
 
                 return (
-                  <div
-                    key={item.id_financeiro}
-                    className={styles.tableRow}
-                  >
+                  <div key={item.id_financeiro} className={styles.tableRow}>
                     <div className={styles.colCliente}>
                       <strong>{item.descricao}</strong>
                       <span>OS-{item.id_ordem_servico}</span>
@@ -341,12 +402,8 @@ export default function RouteComponent() {
                     </div>
 
                     <div className={styles.colStatus}>
-                      <span
-                        className={`${styles.statusBadge} ${badge.style}`}
-                      >
-                        <span
-                          className={`${styles.statusDot} ${badge.dot}`}
-                        />
+                      <span className={`${styles.statusBadge} ${badge.style}`}>
+                        <span className={`${styles.statusDot} ${badge.dot}`} />
                         {badge.label}
                       </span>
                     </div>
@@ -355,11 +412,16 @@ export default function RouteComponent() {
                       <button
                         type="button"
                         className={`${styles.actionBtn} ${
-                          isPago ? styles.actionBtnDisabled : ''
+                          isBloqueado ? styles.actionBtnDisabled : ""
                         }`}
-                        disabled={isPago}
+                        disabled={isBloqueado}
+                        onClick={() => handleOpenPaymentModal(item)}
                       >
-                        Registrar pagamento
+                        {isPago
+                          ? "Pagamento registrado"
+                          : isCancelado
+                            ? "Lançamento cancelado"
+                            : "Registrar pagamento"}
                       </button>
                     </div>
                   </div>
@@ -370,11 +432,121 @@ export default function RouteComponent() {
 
           {isErrorOrders && (
             <div className={styles.warningMessage}>
-              Não foi possível carregar os custos operacionais das ordens de serviço.
+              Não foi possível carregar os custos operacionais das ordens de
+              serviço.
             </div>
           )}
         </div>
       </div>
+
+      {/* Modal de registro de pagamento */}
+      {isModalOpen && selectedFinanceiro && (
+        <div className={styles.modalOverlay} onClick={handleClosePaymentModal}>
+          <div
+            className={styles.paymentModal}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className={styles.modalHeader}>
+              <div className={styles.modalTitleGroup}>
+                <div className={styles.modalIcon}>
+                  <Wallet size={21} />
+                </div>
+
+                <div>
+                  <h2>Registrar pagamento</h2>
+                  <p>Informe a forma de pagamento utilizada.</p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                className={styles.modalCloseButton}
+                onClick={handleClosePaymentModal}
+                disabled={pagarMutation.isPending}
+                aria-label="Fechar modal"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className={styles.modalBody}>
+              <div className={styles.paymentSummary}>
+                <span className={styles.summaryLabel}>
+                  Lançamento financeiro
+                </span>
+
+                <strong>{selectedFinanceiro.descricao}</strong>
+
+                <span>OS-{selectedFinanceiro.id_ordem_servico}</span>
+
+                <div className={styles.paymentAmount}>
+                  {formatCurrency(Number(selectedFinanceiro.valor))}
+                </div>
+              </div>
+
+              <div className={styles.paymentFormGroup}>
+                <label htmlFor="formaPagamento">Forma de pagamento</label>
+
+                <select
+                  id="formaPagamento"
+                  value={formaPagamento}
+                  onChange={(e) =>
+                    setFormaPagamento(e.target.value as FormaPagamento)
+                  }
+                  disabled={pagarMutation.isPending}
+                >
+                  {FORMAS_PAGAMENTO.map((forma) => (
+                    <option key={forma.value} value={forma.value}>
+                      {forma.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {pagarMutation.isError && (
+                <div className={styles.paymentError}>
+                  Não foi possível registrar o pagamento. Tente novamente.
+                </div>
+              )}
+
+              <div className={styles.paymentNotice}>
+                <CheckCircle2 size={17} />
+                <span>Ao confirmar, o lançamento será marcado como pago.</span>
+              </div>
+            </div>
+
+            <div className={styles.modalFooter}>
+              <button
+                type="button"
+                className={styles.cancelButton}
+                onClick={handleClosePaymentModal}
+                disabled={pagarMutation.isPending}
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                className={styles.confirmPaymentButton}
+                onClick={handleConfirmPayment}
+                disabled={pagarMutation.isPending}
+              >
+                {pagarMutation.isPending ? (
+                  <>
+                    <Loader2 size={17} className={styles.spinning} />
+                    Registrando...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 size={17} />
+                    Confirmar pagamento
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

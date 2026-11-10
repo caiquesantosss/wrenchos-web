@@ -1,13 +1,12 @@
 import { apiFetch } from "../../../lib/api"
 
-export type MetodoPagamento =
+export type MetodoPagamentoDTO =
     | 'PIX'
     | 'CARTAO_CREDITO'
     | 'CARTAO_DEBITO'
     | 'DINHEIRO'
     | 'BOLETO'
     | 'TRANSFERENCIA'
-    | null
 
 export type StatusPagamento =
     | 'PENDENTE'
@@ -36,7 +35,7 @@ export interface FinanceiroDTO {
     tipo_lancamento: 'RECEITA' | 'DESPESA'
     status_pagamento: StatusPagamento
     valor: number
-    forma_pagamento: MetodoPagamento
+    forma_pagamento: MetodoPagamentoDTO
     referencia_externa: string | null
     data_vencimento: string | null
     data_pagamento: string | null
@@ -49,10 +48,15 @@ export interface CreateFinanceiroDTO {
     tipo_lancamento: 'RECEITA' | 'DESPESA'
     status_pagamento: StatusPagamento
     valor: number
-    forma_pagamento?: MetodoPagamento
+    forma_pagamento?: MetodoPagamentoDTO
     referencia_externa?: string | null
     data_vencimento?: string | null
 }
+
+export interface PagarFinanceiroDTO {
+    forma_pagamento: MetodoPagamentoDTO
+}
+
 
 export interface FinanceiroWithOSDTO extends FinanceiroDTO {
     ordem_servico: OrdemServicoFinanceiroDTO
@@ -62,6 +66,19 @@ export const getAllFinanceiro = async (): Promise<FinanceiroDTO[]> => {
     return apiFetch<FinanceiroDTO[]>('/financeiro', {
         method: 'GET',
     })
+}
+
+export async function pagarFinanceiro(
+    id: number,
+    data: PagarFinanceiroDTO
+): Promise<FinanceiroDTO> {
+    return apiFetch<FinanceiroDTO>(
+        `/financeiro/${id}/pagar`,
+        {
+            method: "PATCH",
+            body: JSON.stringify(data),
+        }
+    )
 }
 
 export const getAllFinanceiroWithOS = async (): Promise<FinanceiroWithOSDTO[]> => {
