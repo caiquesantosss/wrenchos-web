@@ -3,7 +3,7 @@ import { useState, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Search, Plus, Clock, CheckCircle2, Wallet, AlertTriangle } from 'lucide-react'
 import { SummaryCard } from '../../components/cards'
-import { getAllOrders } from '../../features/orders/api/get-orders'
+import { getAllOrders } from '../../features/orders/api/orders-request'
 import styles from './orcamento.module.css'
 
 export const Route = createFileRoute('/_orcamento/orcamento')({

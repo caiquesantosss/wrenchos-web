@@ -74,9 +74,16 @@ export const getAtivoById = async (
 export const getAtivosByCliente = async (
   idCliente: number,
 ): Promise<AtivoDTO[]> => {
-  return apiFetch<AtivoDTO[]>(`/clientes/${idCliente}/ativos`, {
-    method: "GET",
-  })
+  const response = await apiFetch<AtivoDTO[]>(
+    `/ativos/cliente/${idCliente}`,
+    {
+      method: "GET",
+    },
+  )
+
+  console.log("Equipamentos retornados:", response)
+
+  return response
 }
 
 export const createAtivo = async (

@@ -14,6 +14,7 @@ import {
   Settings,
   LogOut,
   Circle,
+  ChartNoAxesCombined,
 } from "lucide-react"
 import { logout } from "../features/auth/api/login"
 import styles from "./sidebar.module.css"
@@ -44,7 +45,6 @@ export default function SideBar() {
           <span className={styles.companyUnit}>Unidade São Paulo</span>
         </div>
 
-        <ChevronRight size={17} className={styles.companyArrow} />
       </button>
 
       <nav className={styles.navigation}>
@@ -106,20 +106,23 @@ export default function SideBar() {
             <span>Estoque</span>
           </Link>
 
-          <button className={styles.navItem} type="button">
+          <Link
+            to="/financeiro"
+            className={styles.navItem}
+            activeProps={{ className: styles.active }}
+          >
             <Wallet size={17} />
             <span>Financeiro</span>
-          </button>
+          </Link>
 
-          <button className={styles.navItem} type="button">
-            <Receipt size={17} />
-            <span>Fiscal</span>
-          </button>
-
-          <button className={styles.navItem} type="button">
-            <History size={17} />
-            <span>Histórico de manutenção</span>
-          </button>
+          <Link
+            to="/indicadores"
+            className={styles.navItem}
+            activeProps={{ className: styles.active }}
+          >
+            <ChartNoAxesCombined size={17} />
+            <span>Indicadores</span>
+          </Link>
         </div>
 
         <div className={styles.navSection}>
@@ -136,16 +139,6 @@ export default function SideBar() {
           </button>
         </div>
       </nav>
-
-      <div className={styles.shiftCard}>
-        <div className={styles.shiftStatus}>
-          <Circle size={7} fill="currentColor" />
-          <span>Turno atual</span>
-        </div>
-
-        <strong>Manhã · 07:00–13:00</strong>
-        <span className={styles.shiftDescription}>4 técnicos em campo</span>
-      </div>
 
       <footer className={styles.sidebarFooter}>
         <div className={styles.userAvatar}>

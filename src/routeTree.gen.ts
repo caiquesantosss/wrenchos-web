@@ -13,10 +13,13 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ClientesClientesRouteImport } from './routes/_clientes/clientes'
 import { Route as EquipamentosEquipamentosRouteImport } from './routes/_equipamentos/equipamentos'
 import { Route as EstoqueEstoqueRouteImport } from './routes/_estoque/estoque'
+import { Route as FinanceiroFinanceiroRouteImport } from './routes/_financeiro/financeiro'
+import { Route as IndicadoresIndicadoresRouteImport } from './routes/_indicadores/indicadores'
 import { Route as OrcamentoOrcamentoRouteImport } from './routes/_orcamento/orcamento'
 import { Route as Ordem_servicoOrdemServicoRouteImport } from './routes/_ordem_servico/ordemServico'
 import { Route as UsuarioLoginRouteImport } from './routes/_usuario/login'
-import { Route as Ordem_servicoNovaIndexRouteImport } from './routes/_ordem_servico/nova/index'
+import { Route as Ordem_servicoDescricaoIdRouteImport } from './routes/_ordem_servico/descricao/$id'
+import { Route as Ordem_servicoNovaNova_ordemRouteImport } from './routes/_ordem_servico/nova/nova_ordem'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -39,6 +42,16 @@ const EstoqueEstoqueRoute = EstoqueEstoqueRouteImport.update({
   path: '/estoque',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FinanceiroFinanceiroRoute = FinanceiroFinanceiroRouteImport.update({
+  id: '/_financeiro/financeiro',
+  path: '/financeiro',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IndicadoresIndicadoresRoute = IndicadoresIndicadoresRouteImport.update({
+  id: '/_indicadores/indicadores',
+  path: '/indicadores',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OrcamentoOrcamentoRoute = OrcamentoOrcamentoRouteImport.update({
   id: '/_orcamento/orcamento',
   path: '/orcamento',
@@ -55,31 +68,44 @@ const UsuarioLoginRoute = UsuarioLoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const Ordem_servicoNovaIndexRoute = Ordem_servicoNovaIndexRouteImport.update({
-  id: '/_ordem_servico/nova/',
-  path: '/nova/',
-  getParentRoute: () => rootRouteImport,
-} as any)
+const Ordem_servicoDescricaoIdRoute =
+  Ordem_servicoDescricaoIdRouteImport.update({
+    id: '/_ordem_servico/descricao/$id',
+    path: '/descricao/$id',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const Ordem_servicoNovaNova_ordemRoute =
+  Ordem_servicoNovaNova_ordemRouteImport.update({
+    id: '/_ordem_servico/nova/nova_ordem',
+    path: '/nova/nova_ordem',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/clientes': typeof ClientesClientesRoute
   '/equipamentos': typeof EquipamentosEquipamentosRoute
   '/estoque': typeof EstoqueEstoqueRoute
+  '/financeiro': typeof FinanceiroFinanceiroRoute
+  '/indicadores': typeof IndicadoresIndicadoresRoute
   '/orcamento': typeof OrcamentoOrcamentoRoute
   '/ordemServico': typeof Ordem_servicoOrdemServicoRoute
   '/login': typeof UsuarioLoginRoute
-  '/nova/': typeof Ordem_servicoNovaIndexRoute
+  '/descricao/$id': typeof Ordem_servicoDescricaoIdRoute
+  '/nova/nova_ordem': typeof Ordem_servicoNovaNova_ordemRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/clientes': typeof ClientesClientesRoute
   '/equipamentos': typeof EquipamentosEquipamentosRoute
   '/estoque': typeof EstoqueEstoqueRoute
+  '/financeiro': typeof FinanceiroFinanceiroRoute
+  '/indicadores': typeof IndicadoresIndicadoresRoute
   '/orcamento': typeof OrcamentoOrcamentoRoute
   '/ordemServico': typeof Ordem_servicoOrdemServicoRoute
   '/login': typeof UsuarioLoginRoute
-  '/nova': typeof Ordem_servicoNovaIndexRoute
+  '/descricao/$id': typeof Ordem_servicoDescricaoIdRoute
+  '/nova/nova_ordem': typeof Ordem_servicoNovaNova_ordemRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -87,10 +113,13 @@ export interface FileRoutesById {
   '/_clientes/clientes': typeof ClientesClientesRoute
   '/_equipamentos/equipamentos': typeof EquipamentosEquipamentosRoute
   '/_estoque/estoque': typeof EstoqueEstoqueRoute
+  '/_financeiro/financeiro': typeof FinanceiroFinanceiroRoute
+  '/_indicadores/indicadores': typeof IndicadoresIndicadoresRoute
   '/_orcamento/orcamento': typeof OrcamentoOrcamentoRoute
   '/_ordem_servico/ordemServico': typeof Ordem_servicoOrdemServicoRoute
   '/_usuario/login': typeof UsuarioLoginRoute
-  '/_ordem_servico/nova/': typeof Ordem_servicoNovaIndexRoute
+  '/_ordem_servico/descricao/$id': typeof Ordem_servicoDescricaoIdRoute
+  '/_ordem_servico/nova/nova_ordem': typeof Ordem_servicoNovaNova_ordemRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -99,30 +128,39 @@ export interface FileRouteTypes {
     | '/clientes'
     | '/equipamentos'
     | '/estoque'
+    | '/financeiro'
+    | '/indicadores'
     | '/orcamento'
     | '/ordemServico'
     | '/login'
-    | '/nova/'
+    | '/descricao/$id'
+    | '/nova/nova_ordem'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/clientes'
     | '/equipamentos'
     | '/estoque'
+    | '/financeiro'
+    | '/indicadores'
     | '/orcamento'
     | '/ordemServico'
     | '/login'
-    | '/nova'
+    | '/descricao/$id'
+    | '/nova/nova_ordem'
   id:
     | '__root__'
     | '/'
     | '/_clientes/clientes'
     | '/_equipamentos/equipamentos'
     | '/_estoque/estoque'
+    | '/_financeiro/financeiro'
+    | '/_indicadores/indicadores'
     | '/_orcamento/orcamento'
     | '/_ordem_servico/ordemServico'
     | '/_usuario/login'
-    | '/_ordem_servico/nova/'
+    | '/_ordem_servico/descricao/$id'
+    | '/_ordem_servico/nova/nova_ordem'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -130,10 +168,13 @@ export interface RootRouteChildren {
   ClientesClientesRoute: typeof ClientesClientesRoute
   EquipamentosEquipamentosRoute: typeof EquipamentosEquipamentosRoute
   EstoqueEstoqueRoute: typeof EstoqueEstoqueRoute
+  FinanceiroFinanceiroRoute: typeof FinanceiroFinanceiroRoute
+  IndicadoresIndicadoresRoute: typeof IndicadoresIndicadoresRoute
   OrcamentoOrcamentoRoute: typeof OrcamentoOrcamentoRoute
   Ordem_servicoOrdemServicoRoute: typeof Ordem_servicoOrdemServicoRoute
   UsuarioLoginRoute: typeof UsuarioLoginRoute
-  Ordem_servicoNovaIndexRoute: typeof Ordem_servicoNovaIndexRoute
+  Ordem_servicoDescricaoIdRoute: typeof Ordem_servicoDescricaoIdRoute
+  Ordem_servicoNovaNova_ordemRoute: typeof Ordem_servicoNovaNova_ordemRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -166,6 +207,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EstoqueEstoqueRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_financeiro/financeiro': {
+      id: '/_financeiro/financeiro'
+      path: '/financeiro'
+      fullPath: '/financeiro'
+      preLoaderRoute: typeof FinanceiroFinanceiroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_indicadores/indicadores': {
+      id: '/_indicadores/indicadores'
+      path: '/indicadores'
+      fullPath: '/indicadores'
+      preLoaderRoute: typeof IndicadoresIndicadoresRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_orcamento/orcamento': {
       id: '/_orcamento/orcamento'
       path: '/orcamento'
@@ -187,11 +242,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UsuarioLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_ordem_servico/nova/': {
-      id: '/_ordem_servico/nova/'
-      path: '/nova'
-      fullPath: '/nova/'
-      preLoaderRoute: typeof Ordem_servicoNovaIndexRouteImport
+    '/_ordem_servico/descricao/$id': {
+      id: '/_ordem_servico/descricao/$id'
+      path: '/descricao/$id'
+      fullPath: '/descricao/$id'
+      preLoaderRoute: typeof Ordem_servicoDescricaoIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_ordem_servico/nova/nova_ordem': {
+      id: '/_ordem_servico/nova/nova_ordem'
+      path: '/nova/nova_ordem'
+      fullPath: '/nova/nova_ordem'
+      preLoaderRoute: typeof Ordem_servicoNovaNova_ordemRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -202,10 +264,13 @@ const rootRouteChildren: RootRouteChildren = {
   ClientesClientesRoute: ClientesClientesRoute,
   EquipamentosEquipamentosRoute: EquipamentosEquipamentosRoute,
   EstoqueEstoqueRoute: EstoqueEstoqueRoute,
+  FinanceiroFinanceiroRoute: FinanceiroFinanceiroRoute,
+  IndicadoresIndicadoresRoute: IndicadoresIndicadoresRoute,
   OrcamentoOrcamentoRoute: OrcamentoOrcamentoRoute,
   Ordem_servicoOrdemServicoRoute: Ordem_servicoOrdemServicoRoute,
   UsuarioLoginRoute: UsuarioLoginRoute,
-  Ordem_servicoNovaIndexRoute: Ordem_servicoNovaIndexRoute,
+  Ordem_servicoDescricaoIdRoute: Ordem_servicoDescricaoIdRoute,
+  Ordem_servicoNovaNova_ordemRoute: Ordem_servicoNovaNova_ordemRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

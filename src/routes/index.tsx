@@ -10,7 +10,7 @@ import {
 } from "lucide-react"
 
 import { allCatalogItems } from "../features/items/catalogo/api/catalogo_items"
-import { getAllOrders } from "../features/orders/api/get-orders"
+import { getAllOrders } from "../features/orders/api/orders-request"
 import { getAllFinanceiro } from "../features/finance/api/financeiro"
 
 import { SummaryCard } from "../components/cards"

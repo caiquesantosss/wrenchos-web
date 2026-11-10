@@ -36,7 +36,7 @@ export default function Header({ title }: HeaderProps) {
 
         <Bell className={styles.bell} />
 
-        <Link to="/nova" className={styles.newOrderButton}>
+        <Link to="/nova/nova_ordem" className={styles.newOrderButton}>
           <Plus size={17} strokeWidth={2.5} />
           <span>Nova ordem</span>
         </Link>

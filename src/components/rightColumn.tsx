@@ -2,7 +2,7 @@ import { CheckCircle2, Clock, Package } from "lucide-react"
 import styles from "./rightColumn.module.css"
 import { getAllFinanceiro } from "../features/finance/api/financeiro"
 import { useQuery } from "@tanstack/react-query"
-import { getAllOrders } from "../features/orders/api/get-orders"
+import { getAllOrders } from "../features/orders/api/orders-request"
 
 export default function RightColumn() {
   const { data: allFinanceiro, isLoading: isLoadingFinance } = useQuery({

@@ -1,7 +1,7 @@
 import { useState } from "react"
 import styles from "./recentOrders.module.css"
 import { useQuery } from "@tanstack/react-query"
-import { getAllOrders } from "../features/orders/api/get-orders"
+import { getAllOrders } from "../features/orders/api/orders-request"
 
 export default function RecentOrders() {
   const [selectedFilter, setSelectedFilter] = useState("abertas")

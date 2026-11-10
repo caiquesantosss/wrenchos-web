@@ -1,5 +1,4 @@
-
-import { createFileRoute } from "@tanstack/react-router"
+import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useState } from "react"
 import { SummaryCard } from "../../components/cards"
 import {
@@ -10,7 +9,7 @@ import {
   Search,
 } from "lucide-react"
 import { useQuery } from "@tanstack/react-query"
-import { getAllOrders } from "../../features/orders/api/get-orders"
+import { getAllOrders } from "../../features/orders/api/orders-request"
 import styles from "./ordemServico.module.css"
 import cardStyles from "../../components/cards.module.css"
 
@@ -28,10 +27,7 @@ function normalizeText(value: string) {
 }
 
 function getDateKey(date: string | Date) {
-  if (
-    typeof date === "string" &&
-    /^\d{4}-\d{2}-\d{2}$/.test(date)
-  ) {
+  if (typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
     return date
   }
 
@@ -53,6 +49,8 @@ function RouteComponent() {
   const [selectedDate, setSelectedDate] = useState("")
 
   const [currentPage, setCurrentPage] = useState(1)
+
+  const navigate = useNavigate()
 
   const { data: allOrders = [], isLoading } = useQuery({
     queryKey: ["orders", "todas"],
@@ -133,19 +131,12 @@ function RouteComponent() {
           : order.status === selectedStatus)
 
       const matchesClient =
-        selectedClient === "TODOS" ||
-        order.cliente?.nome === selectedClient
+        selectedClient === "TODOS" || order.cliente?.nome === selectedClient
 
       const matchesDate =
-        !selectedDate ||
-        getDateKey(order.data_abertura) === selectedDate
+        !selectedDate || getDateKey(order.data_abertura) === selectedDate
 
-      return (
-        matchesSearch &&
-        matchesStatus &&
-        matchesClient &&
-        matchesDate
-      )
+      return matchesSearch && matchesStatus && matchesClient && matchesDate
     })
     .sort(
       (a, b) =>
@@ -163,10 +154,7 @@ function RouteComponent() {
   const startIndex = (safeCurrentPage - 1) * ITEMS_PER_PAGE
   const endIndex = startIndex + ITEMS_PER_PAGE
 
-  const paginatedOrders = filteredOrders.slice(
-    startIndex,
-    endIndex,
-  )
+  const paginatedOrders = filteredOrders.slice(startIndex, endIndex)
 
   const firstOrder = totalOrders === 0 ? 0 : startIndex + 1
   const lastOrder = Math.min(endIndex, totalOrders)
@@ -188,7 +176,7 @@ function RouteComponent() {
           title="Abertas"
           icon={<ClipboardList size={18} />}
           iconTheme="gray"
-          value={ordersByStatus["ABERTAS"] ?? 0}
+          value={ordersByStatus["ABERTA"] ?? 0}
           isLoading={isLoading}
           footerText="Aguardando atendimento"
         />
@@ -255,16 +243,10 @@ function RouteComponent() {
           >
             <option value="TODOS">Todos os status</option>
             <option value="ABERTA">Aberta</option>
-            <option value="ORCAMENTO_PENDENTE">
-              Orçamento
-            </option>
-            <option value="AGUARDANDO_APROVACAO">
-              Aguardando aprovação
-            </option>
+            <option value="ORCAMENTO_PENDENTE">Orçamento</option>
+            <option value="AGUARDANDO_APROVACAO">Aguardando aprovação</option>
             <option value="EM_EXECUCAO">Em execução</option>
-            <option value="AGUARDANDO_PECA">
-              Aguardando peças
-            </option>
+            <option value="AGUARDANDO_PECA">Aguardando peças</option>
             <option value="CONCLUIDA">Concluída</option>
             <option value="CANCELADA">Cancelada</option>
           </select>
@@ -310,9 +292,7 @@ function RouteComponent() {
         </div>
 
         {isLoading ? (
-          <p className={styles.emptyMessage}>
-            Carregando ordens de serviço...
-          </p>
+          <p className={styles.emptyMessage}>Carregando ordens de serviço...</p>
         ) : (
           <div className={styles.ordersList}>
             {paginatedOrders.length === 0 ? (
@@ -321,10 +301,7 @@ function RouteComponent() {
               </p>
             ) : (
               paginatedOrders.map((order) => (
-                <div
-                  key={order.id_ordem_servico}
-                  className={styles.orderRow}
-                >
+                <div key={order.id_ordem_servico} className={styles.orderRow}>
                   <div className={styles.colOrdem}>
                     <span className={styles.osNumber}>
                       OS - {order.id_ordem_servico}
@@ -333,13 +310,11 @@ function RouteComponent() {
 
                   <div className={styles.colCliente}>
                     <strong>
-                      {order.cliente?.nome ||
-                        "Cliente não informado"}
+                      {order.cliente?.nome || "Cliente não informado"}
                     </strong>
 
                     <span className={styles.subText}>
-                      {order.ativo?.descricao ||
-                        "Equipamento não informado"}
+                      {order.ativo?.descricao || "Equipamento não informado"}
                     </span>
                   </div>
 
@@ -348,9 +323,7 @@ function RouteComponent() {
                       {getInitial(order.usuario?.nome)}
                     </div>
 
-                    <span>
-                      {order.usuario?.nome || "Não atribuído"}
-                    </span>
+                    <span>{order.usuario?.nome || "Não atribuído"}</span>
                   </div>
 
                   <div className={styles.statusWrapper}>
@@ -368,13 +341,25 @@ function RouteComponent() {
                   {/* Valor */}
                   <div className={styles.colValor}>
                     <strong>
-                      {formatCurrency(
-                        Number(order.valor_total || 0),
-                      )}
+                      {formatCurrency(Number(order.valor_total || 0))}
                     </strong>
                   </div>
 
-                  <div className={styles.actionIcon}>↗</div>
+                  <button
+                    type="button"
+                    className={styles.actionIcon}
+                    aria-label={`Visualizar OS ${order.id_ordem_servico}`}
+                    onClick={() =>
+                      navigate({
+                        to: "/descricao/$id",
+                        params: {
+                          id: String(order.id_ordem_servico),
+                        },
+                      })
+                    }
+                  >
+                    ↗
+                  </button>
                 </div>
               ))
             )}
