@@ -1,9 +1,9 @@
-
 import { createFileRoute } from "@tanstack/react-router"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   Check,
+  Pencil,
   Trash2,
   Loader2,
   X,
@@ -19,10 +19,15 @@ import {
   finishExecution,
   getOrderById,
   StartExecution,
+  updateOrdemServico,
+  cancelOrdemServico,
   type AddItemsOsDTO,
+  type UpdateOrdemServicoDTO,
 } from "../../../features/orders/api/orders-request"
 
 import { allCatalogItems } from "../../../features/items/catalogo/api/catalogo_items"
+import { getAtivosByCliente } from '../../../features/ativo/api/ativos'
+import { getAllClientes } from "../../../features/clients/api/clients"
 
 import {
   createFinanceToOS,
@@ -125,16 +130,9 @@ function normalizeStatus(status: string): string {
     .replace(/[\s-]+/g, "_")
 }
 
-function getCurrentStepIndex(
-  status: string,
-  hasFinanceiro: boolean,
-): number {
+function getCurrentStepIndex(status: string, hasFinanceiro: boolean): number {
   const normalizedStatus = normalizeStatus(status)
-
-  if (normalizedStatus === "CONCLUIDA" && hasFinanceiro) {
-    return 5
-  }
-
+  if (normalizedStatus === "CONCLUIDA" && hasFinanceiro) return 5
   return ORDER_STAGES[normalizedStatus] ?? 0
 }
 
@@ -145,53 +143,26 @@ function getPrimaryAction(
 ): PrimaryAction {
   const normalizedStatus = normalizeStatus(status)
 
-  if (
-    DIAGNOSTIC_STATUSES.includes(normalizedStatus) &&
-    !hasDiagnostic
-  ) {
-    return {
-      label: "Gerar diagnóstico",
-      action: "diagnostic",
-      enabled: true,
-    }
+  if (DIAGNOSTIC_STATUSES.includes(normalizedStatus) && !hasDiagnostic) {
+    return { label: "Gerar diagnóstico", action: "diagnostic", enabled: true }
   }
 
   if (BUDGET_STATUSES.includes(normalizedStatus)) {
-    return {
-      label: "Definir orçamento",
-      action: "budget",
-      enabled: true,
-    }
+    return { label: "Definir orçamento", action: "budget", enabled: true }
   }
 
   if (normalizedStatus === "AGUARDANDO_APROVACAO") {
-    return {
-      label: "Iniciar execução",
-      action: "approval",
-      enabled: true,
-    }
+    return { label: "Iniciar execução", action: "approval", enabled: true }
   }
 
   if (normalizedStatus === "EM_EXECUCAO") {
-    return {
-      label: "Concluir serviço",
-      action: "completion",
-      enabled: true,
-    }
+    return { label: "Concluir serviço", action: "completion", enabled: true }
   }
 
   if (normalizedStatus === "CONCLUIDA") {
     return hasFinanceiro
-      ? {
-          label: "Faturamento gerado",
-          action: "none",
-          enabled: false,
-        }
-      : {
-          label: "Gerar faturamento",
-          action: "billing",
-          enabled: true,
-        }
+      ? { label: "Faturamento gerado", action: "none", enabled: false }
+      : { label: "Gerar faturamento", action: "billing", enabled: true }
   }
 
   return (
@@ -205,11 +176,8 @@ function getPrimaryAction(
 
 function formatDate(dateString?: string | null): string {
   if (!dateString) return "---"
-
   const date = new Date(dateString)
-
   if (Number.isNaN(date.getTime())) return "---"
-
   return new Intl.DateTimeFormat("pt-BR").format(date)
 }
 
@@ -223,7 +191,6 @@ function formatCurrency(value: string | number): string {
 export default function RouteComponent() {
   const { id } = Route.useParams()
   const queryClient = useQueryClient()
-
   const orderId = Number(id)
 
   const [activeTab, setActiveTab] = useState("visao_geral")
@@ -245,6 +212,16 @@ export default function RouteComponent() {
   const [solucaoInput, setSolucaoInput] = useState("")
   const [completionError, setCompletionError] = useState<string | null>(null)
 
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [editIdCliente, setEditIdCliente] = useState<number | "">("")
+  const [editIdAtivo, setEditIdAtivo] = useState<number | "">("")
+  const [editDescricao, setEditDescricao] = useState("")
+  const [editPrevisao, setEditPrevisao] = useState("")
+  const [editError, setEditError] = useState<string | null>(null)
+
+  // Estado para o Modal de Cancelamento
+  const [showCancelModal, setShowCancelModal] = useState(false)
+
   const {
     data: ordem,
     isLoading,
@@ -255,52 +232,50 @@ export default function RouteComponent() {
     enabled: Number.isInteger(orderId) && orderId > 0,
   })
 
-  const {
-    data: catalogoItems = [],
-    isLoading: isLoadingCatalog,
-  } = useQuery({
+  const { data: catalogoItems = [], isLoading: isLoadingCatalog } = useQuery({
     queryKey: ["catalogo-itens", "todos"],
     queryFn: allCatalogItems,
     enabled: showBudgetModal,
   })
 
-  const {
-    data: financeiroList = [],
-    isLoading: isLoadingFinanceiro,
-  } = useQuery({
-    queryKey: ["financeiro", "todos"],
-    queryFn: getAllFinanceiro,
+  const { data: financeiroList = [], isLoading: isLoadingFinanceiro } =
+    useQuery({
+      queryKey: ["financeiro", "todos"],
+      queryFn: getAllFinanceiro,
+    })
+
+  const { data: clientes = [], isLoading: isLoadingClientes } = useQuery({
+    queryKey: ["clientes", "todos"],
+    queryFn: getAllClientes,
+    enabled: showEditModal,
+  })
+
+  const { data: ativos = [], isFetching: isFetchingAtivos } = useQuery({
+    queryKey: ["ativos", "cliente", editIdCliente],
+    queryFn: () => getAtivosByCliente(Number(editIdCliente)),
+    enabled: showEditModal && !!editIdCliente,
   })
 
   const financeiroDaOS = financeiroList.find(
     (financeiro) => financeiro.id_ordem_servico === orderId,
   )
-
   const hasFinanceiro = Boolean(financeiroDaOS)
 
   const invalidateOrders = async () => {
-    await queryClient.invalidateQueries({
-      queryKey: ["orders"],
-    })
+    await queryClient.invalidateQueries({ queryKey: ["orders"] })
   }
 
   const diagnosticMutation = useMutation({
     mutationFn: (diagnostico: string) =>
       addDiagnostic({ diagnostico }, orderId),
-
     onSuccess: async () => {
       setDiagError(null)
       setDiagnosticoInput("")
       setShowDiagnosticModal(false)
-
       await invalidateOrders()
     },
-
-    onError: (error: Error) => {
-      setDiagError(
-        error.message || "Erro ao registrar diagnóstico.",
-      )
-    },
+    onError: (error: Error) =>
+      setDiagError(error.message || "Erro ao registrar diagnóstico."),
   })
 
   const budgetMutation = useMutation({
@@ -314,9 +289,7 @@ export default function RouteComponent() {
         await addItemsToOrder(orderId, itemsPayload)
       }
 
-      const valorMaoObra = Number.parseFloat(
-        laborCostInput.replace(",", "."),
-      )
+      const valorMaoObra = Number.parseFloat(laborCostInput.replace(",", "."))
 
       await defineOrcamento(orderId, {
         valor_mao_obra: valorMaoObra,
@@ -332,59 +305,42 @@ export default function RouteComponent() {
       setItemQuantity(1)
       setBudgetStep(1)
 
-      await invalidateOrders()
+      await queryClient.invalidateQueries({
+        queryKey: ["orders"],
+      })
     },
 
     onError: (error: Error) => {
-      setBudgetError(
-        error.message || "Erro ao salvar o orçamento.",
-      )
+      setBudgetError(error.message || "Erro ao salvar o orçamento.")
     },
   })
 
   const startExecutionMutation = useMutation({
     mutationFn: () => StartExecution(orderId),
-
     onSuccess: async () => {
       setGlobalError(null)
-
       await invalidateOrders()
     },
-
-    onError: (error: Error) => {
-      setGlobalError(
-        error.message || "Erro ao iniciar a execução da OS.",
-      )
-    },
+    onError: (error: Error) =>
+      setGlobalError(error.message || "Erro ao iniciar a execução da OS."),
   })
 
   const completionMutation = useMutation({
     mutationFn: (solucao: string) =>
-      finishExecution(orderId, {
-        appliedSolution: solucao,
-      }),
-
+      finishExecution(orderId, { appliedSolution: solucao }),
     onSuccess: async () => {
       setCompletionError(null)
       setSolucaoInput("")
       setShowCompletionModal(false)
-
       await invalidateOrders()
     },
-
-    onError: (error: Error) => {
-      setCompletionError(
-        error.message || "Erro ao concluir serviço.",
-      )
-    },
+    onError: (error: Error) =>
+      setCompletionError(error.message || "Erro ao concluir serviço."),
   })
 
   const faturarMutation = useMutation({
     mutationFn: () => {
-      if (!ordem) {
-        throw new Error("Ordem de serviço não encontrada.")
-      }
-
+      if (!ordem) throw new Error("Ordem de serviço não encontrada.")
       const payload: CreateFinanceiroDTO = {
         id_ordem_servico: orderId,
         descricao: `Faturamento OS-${orderId}`,
@@ -393,46 +349,97 @@ export default function RouteComponent() {
         valor: Number(ordem.valor_total),
         data_vencimento: new Date().toISOString(),
       }
-
       return createFinanceToOS(orderId, payload)
     },
-
     onSuccess: async () => {
       setGlobalError(null)
       setActiveTab("financeiro")
-
       await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["financeiro"],
-        }),
+        queryClient.invalidateQueries({ queryKey: ["financeiro"] }),
         invalidateOrders(),
       ])
     },
-
-    onError: (error: Error) => {
-      setGlobalError(
-        error.message || "Erro ao gerar faturamento.",
-      )
-    },
+    onError: (error: Error) =>
+      setGlobalError(error.message || "Erro ao gerar faturamento."),
   })
+
+  const editMutation = useMutation({
+    mutationFn: (data: UpdateOrdemServicoDTO) =>
+      updateOrdemServico(orderId, data),
+    onSuccess: async () => {
+      setEditError(null)
+      setShowEditModal(false)
+      await invalidateOrders()
+    },
+    onError: (error: Error) =>
+      setEditError(error.message || "Erro ao atualizar a ordem de serviço."),
+  })
+
+  // Mutation para Cancelar a OS
+  const cancelMutation = useMutation({
+    mutationFn: () => cancelOrdemServico(orderId),
+    onSuccess: async () => {
+      setGlobalError(null)
+      setShowCancelModal(false)
+      await invalidateOrders()
+    },
+    onError: (error: Error) =>
+      setGlobalError(error.message || "Erro ao cancelar a Ordem de Serviço."),
+  })
+
+  const handleOpenEdit = () => {
+    if (ordem) {
+      setEditIdCliente(ordem.cliente?.id_cliente || "")
+      setEditIdAtivo(ordem.ativo?.id_ativo || "")
+      setEditDescricao(ordem.descricao_problema || "")
+      let dataPrev = ""
+      if (ordem.data_previsao) {
+        const dateObj = new Date(ordem.data_previsao)
+        if (!isNaN(dateObj.getTime())) {
+          dataPrev = dateObj.toISOString().split("T")[0]
+        }
+      }
+      setEditPrevisao(dataPrev)
+      setEditError(null)
+      setShowEditModal(true)
+    }
+  }
+
+  const handleSaveEdit = () => {
+    if (!editIdCliente || !editIdAtivo || !editDescricao.trim()) {
+      setEditError("Preencha todos os campos obrigatórios.")
+      return
+    }
+
+    let dataISO: string | null = null
+    if (editPrevisao) {
+      const dateObj = new Date(editPrevisao)
+      if (!isNaN(dateObj.getTime())) {
+        dataISO = dateObj.toISOString()
+      }
+    }
+
+    editMutation.mutate({
+      id_cliente: Number(editIdCliente),
+      id_ativo: Number(editIdAtivo),
+      descricao_problema: editDescricao,
+      data_previsao: dataISO,
+    })
+  }
 
   const handleSaveDiagnostic = () => {
     if (diagnosticoInput.trim().length < 5) {
       setDiagError("O diagnóstico deve ser mais descritivo.")
       return
     }
-
     diagnosticMutation.mutate(diagnosticoInput.trim())
   }
 
   const handleSaveCompletion = () => {
     if (solucaoInput.trim().length < 5) {
-      setCompletionError(
-        "A solução aplicada deve ser mais descritiva.",
-      )
+      setCompletionError("A solução aplicada deve ser mais descritiva.")
       return
     }
-
     completionMutation.mutate(solucaoInput.trim())
   }
 
@@ -441,52 +448,38 @@ export default function RouteComponent() {
       selectedItemId === "" ||
       !Number.isInteger(itemQuantity) ||
       itemQuantity <= 0
-    ) {
+    )
       return
-    }
-
     const selectedItem = catalogoItems.find(
       (item) => item.id_catalogo_item === selectedItemId,
     )
-
     if (!selectedItem) return
 
     setAddedItems((currentItems) => {
       const existingItem = currentItems.find(
-        (item) =>
-          item.id_catalogo_item === selectedItem.id_catalogo_item,
+        (item) => item.id_catalogo_item === selectedItem.id_catalogo_item,
       )
-
       if (existingItem) {
         return currentItems.map((item) => {
-          if (
-            item.id_catalogo_item !== selectedItem.id_catalogo_item
-          ) {
+          if (item.id_catalogo_item !== selectedItem.id_catalogo_item)
             return item
-          }
-
           const quantidade = item.quantidade + itemQuantity
-
           return {
             ...item,
             quantidade,
-            valor_total_item:
-              Number(item.valor_unitario) * quantidade,
+            valor_total_item: Number(item.valor_unitario) * quantidade,
           }
         })
       }
-
       return [
         ...currentItems,
         {
           ...selectedItem,
           quantidade: itemQuantity,
-          valor_total_item:
-            Number(selectedItem.valor_unitario) * itemQuantity,
+          valor_total_item: Number(selectedItem.valor_unitario) * itemQuantity,
         },
       ]
     })
-
     setSelectedItemId("")
     setItemQuantity(1)
   }
@@ -498,15 +491,11 @@ export default function RouteComponent() {
   }
 
   const handleSaveBudget = () => {
-    const laborValue = Number.parseFloat(
-      laborCostInput.replace(",", "."),
-    )
-
+    const laborValue = Number.parseFloat(laborCostInput.replace(",", "."))
     if (!Number.isFinite(laborValue) || laborValue < 0) {
       setBudgetError("Informe um valor válido para a mão de obra.")
       return
     }
-
     budgetMutation.mutate()
   }
 
@@ -514,40 +503,26 @@ export default function RouteComponent() {
     (total, item) => total + item.valor_total_item,
     0,
   )
-
-  const totalMaoObra =
-    Number.parseFloat(laborCostInput.replace(",", ".")) || 0
-
+  const totalMaoObra = Number.parseFloat(laborCostInput.replace(",", ".")) || 0
   const valorTotalOrcamento = totalPecas + totalMaoObra
 
   if (!Number.isInteger(orderId) || orderId <= 0) {
-    return (
-      <div className={styles.errorState}>
-        Identificador inválido.
-      </div>
-    )
+    return <div className={styles.errorState}>Identificador inválido.</div>
   }
 
   if (isLoading) {
     return (
-      <div className={styles.loadingState}>
-        Carregando detalhes da OS...
-      </div>
+      <div className={styles.loadingState}>Carregando detalhes da OS...</div>
     )
   }
 
   if (isError || !ordem) {
     return (
-      <div className={styles.errorState}>
-        Não foi possível carregar a OS.
-      </div>
+      <div className={styles.errorState}>Não foi possível carregar a OS.</div>
     )
   }
 
-  const currentStepIndex = getCurrentStepIndex(
-    ordem.status,
-    hasFinanceiro,
-  )
+  const currentStepIndex = getCurrentStepIndex(ordem.status, hasFinanceiro)
 
   const primaryAction = getPrimaryAction(
     ordem.status,
@@ -560,33 +535,35 @@ export default function RouteComponent() {
     budgetMutation.isPending ||
     startExecutionMutation.isPending ||
     completionMutation.isPending ||
-    faturarMutation.isPending
+    faturarMutation.isPending ||
+    editMutation.isPending ||
+    cancelMutation.isPending
 
   const isPrimaryActionDisabled =
     !primaryAction.enabled ||
     isGlobalLoading ||
     (primaryAction.action === "billing" && isLoadingFinanceiro)
 
+  const isOSClosedOrCanceled =
+    normalizeStatus(ordem.status) === "CANCELADA" ||
+    normalizeStatus(ordem.status) === "CONCLUIDA" ||
+    normalizeStatus(ordem.status) === "ENCERRADA"
+
   const handlePrimaryAction = () => {
     setGlobalError(null)
-
     switch (primaryAction.action) {
       case "diagnostic":
         setShowDiagnosticModal(true)
         break
-
       case "budget":
         setShowBudgetModal(true)
         break
-
       case "approval":
         startExecutionMutation.mutate()
         break
-
       case "completion":
         setShowCompletionModal(true)
         break
-
       case "billing":
         faturarMutation.mutate()
         break
@@ -613,7 +590,6 @@ export default function RouteComponent() {
         <div className={styles.headerTitleArea}>
           <div className={styles.titleRow}>
             <h1>OS-{ordem.id_ordem_servico}</h1>
-
             <span className={styles.statusBadgeEmExecucao}>
               <span className={styles.dotOrange} />
               {ordem.status}
@@ -628,19 +604,36 @@ export default function RouteComponent() {
         <div className={styles.headerActions}>
           <button
             type="button"
+            className={styles.btnIcon}
+            onClick={handleOpenEdit}
+            disabled={isGlobalLoading || isOSClosedOrCanceled}
+            title="Editar OS"
+          >
+            <Pencil size={16} />
+          </button>
+
+          <button
+            type="button"
+            className={styles.btnIcon}
+            onClick={() => setShowCancelModal(true)}
+            disabled={isGlobalLoading || isOSClosedOrCanceled}
+            title="Cancelar OS"
+          >
+            <X size={16} />
+          </button>
+
+          <button
+            type="button"
             className={styles.btnPrimary}
             disabled={isPrimaryActionDisabled}
             onClick={handlePrimaryAction}
           >
-            {isGlobalLoading || (
-              primaryAction.action === "billing" &&
-              isLoadingFinanceiro
-            ) ? (
+            {isGlobalLoading ||
+            (primaryAction.action === "billing" && isLoadingFinanceiro) ? (
               <Loader2 size={16} className={styles.spinner} />
             ) : (
               <Check size={16} />
             )}
-
             {primaryAction.label}
           </button>
         </div>
@@ -666,9 +659,7 @@ export default function RouteComponent() {
                 {isCompleted ? <Check size={14} /> : index + 1}
               </div>
 
-              <span className={styles.stepLabel}>
-                {step}
-              </span>
+              <span className={styles.stepLabel}>{step}</span>
             </div>
           )
         })}
@@ -714,24 +705,13 @@ export default function RouteComponent() {
         >
           Financeiro
         </button>
-
-        <button
-          type="button"
-          className={`${styles.tabBtn} ${
-            activeTab === "historico" ? styles.tabActive : ""
-          }`}
-          onClick={() => setActiveTab("historico")}
-        >
-          Histórico
-        </button>
       </nav>
 
+      {/* ABA: VISÃO GERAL */}
       {activeTab === "visao_geral" && (
         <div className={styles.mainGrid}>
           <div className={styles.leftCol}>
-            <h2 className={styles.sectionTitle}>
-              Informações do atendimento
-            </h2>
+            <h2 className={styles.sectionTitle}>Informações do atendimento</h2>
 
             <div className={styles.infoGrid}>
               <div className={styles.infoBlock}>
@@ -750,9 +730,7 @@ export default function RouteComponent() {
 
               <div className={styles.infoBlock}>
                 <label>Responsável</label>
-                <span>
-                  {ordem.usuario?.nome || "Não atribuído"}
-                </span>
+                <span>{ordem.usuario?.nome || "Não atribuído"}</span>
               </div>
 
               <div className={styles.infoBlock}>
@@ -787,13 +765,11 @@ export default function RouteComponent() {
               <h3>Diagnóstico técnico</h3>
 
               {ordem.diagnostico ? (
-                <p className={styles.diagnosticText}>
-                  {ordem.diagnostico}
-                </p>
+                <p className={styles.diagnosticText}>{ordem.diagnostico}</p>
               ) : (
                 <p className={styles.diagnosticEmpty}>
-                  Diagnóstico não registrado. Utilize a ação
-                  correspondente no topo.
+                  Diagnóstico não registrado. Utilize a ação correspondente no
+                  topo.
                 </p>
               )}
             </section>
@@ -814,15 +790,11 @@ export default function RouteComponent() {
 
           <aside className={styles.rightCol}>
             <div className={styles.summaryBox}>
-              <h2 className={styles.sectionTitle}>
-                Resumo da ordem
-              </h2>
+              <h2 className={styles.sectionTitle}>Resumo da ordem</h2>
 
               <div className={styles.summaryRow}>
                 <span>Serviços e peças</span>
-                <strong>
-                  {formatCurrency(ordem.valor_total || 0)}
-                </strong>
+                <strong>{formatCurrency(ordem.valor_total || 0)}</strong>
               </div>
 
               <div className={styles.summaryRow}>
@@ -839,9 +811,7 @@ export default function RouteComponent() {
             </div>
 
             <div className={styles.timelineBox}>
-              <h2 className={styles.sectionTitle}>
-                Últimas atualizações
-              </h2>
+              <h2 className={styles.sectionTitle}>Últimas atualizações</h2>
 
               {hasFinanceiro && financeiroDaOS && (
                 <div className={styles.timelineItem}>
@@ -852,12 +822,8 @@ export default function RouteComponent() {
 
                   <div className={styles.timelineContent}>
                     <h4>Faturamento gerado</h4>
-                    <p>
-                      Lançamento financeiro registrado com sucesso
-                    </p>
-                    <span>
-                      {formatDate(financeiroDaOS.data_cadastro)}
-                    </span>
+                    <p>Lançamento financeiro registrado com sucesso</p>
+                    <span>{formatDate(financeiroDaOS.data_cadastro)}</span>
                   </div>
                 </div>
               )}
@@ -870,12 +836,8 @@ export default function RouteComponent() {
 
                 <div className={styles.timelineContent}>
                   <h4>{ordem.status}</h4>
-                  <p>
-                    Atualizado por {ordem.usuario?.nome || "Sistema"}
-                  </p>
-                  <span>
-                    {formatDate(ordem.data_atualizacao)}
-                  </span>
+                  <p>Atualizado por {ordem.usuario?.nome || "Sistema"}</p>
+                  <span>{formatDate(ordem.data_atualizacao)}</span>
                 </div>
               </div>
 
@@ -897,11 +859,10 @@ export default function RouteComponent() {
         </div>
       )}
 
+      {/* ABA: SERVIÇOS E PEÇAS */}
       {activeTab === "servicos" && (
         <div className={styles.fullCol}>
-          <h2 className={styles.sectionTitle}>
-            Itens e Serviços Vinculados
-          </h2>
+          <h2 className={styles.sectionTitle}>Itens e Serviços Vinculados</h2>
 
           {ordem.itens_os && ordem.itens_os.length > 0 ? (
             <div className={styles.servicesTable}>
@@ -913,34 +874,25 @@ export default function RouteComponent() {
               </div>
 
               <div className={styles.servicesTableBody}>
-                {ordem.itens_os.map((item) => (
+                {ordem.itens_os.map((item: any) => (
                   <div
                     key={item.id_item_os}
                     className={styles.servicesTableRow}
                   >
                     <div className={styles.servicesColInfo}>
                       <strong>
-                        {item.catalogo_item?.descricao ||
-                          "Item sem descrição"}
+                        {item.catalogo_item?.descricao || "Item sem descrição"}
                       </strong>
 
-                      <span>
-                        {item.catalogo_item?.tipo_item || "-"}
-                      </span>
+                      <span>{item.catalogo_item?.tipo_item || "-"}</span>
                     </div>
 
-                    <div>
-                      {Number(item.quantidade)} un
-                    </div>
+                    <div>{Number(item.quantidade)} un</div>
+
+                    <div>{formatCurrency(item.valor_unitario)}</div>
 
                     <div>
-                      {formatCurrency(item.valor_unitario)}
-                    </div>
-
-                    <div>
-                      <strong>
-                        {formatCurrency(item.valor_total)}
-                      </strong>
+                      <strong>{formatCurrency(item.valor_total)}</strong>
                     </div>
                   </div>
                 ))}
@@ -949,19 +901,87 @@ export default function RouteComponent() {
           ) : (
             <div className={styles.emptyServicesState}>
               <p>
-                Não há peças ou serviços registrados nesta
-                Ordem de Serviço.
+                Não há peças ou serviços registrados nesta Ordem de Serviço.
               </p>
             </div>
           )}
         </div>
       )}
 
+      {/* ABA: ORÇAMENTO */}
+      {activeTab === "orcamento" && (
+        <div className={styles.fullCol}>
+          {(!ordem.itens_os || ordem.itens_os.length === 0) &&
+          !ordem.valor_mao_obra ? (
+            <div className={styles.emptyServicesState}>
+              <p>
+                O orçamento ainda não foi definido para esta Ordem de Serviço.
+              </p>
+            </div>
+          ) : (
+            <div className={styles.orcamentoWrapper}>
+              <div className={styles.servicesTable}>
+                <div className={styles.servicesTableHeader}>
+                  <span>DESCRIÇÃO</span>
+                  <span>QTD.</span>
+                  <span>UNITÁRIO</span>
+                  <span>TOTAL</span>
+                </div>
+
+                <div className={styles.servicesTableBody}>
+                  {Number(ordem.valor_mao_obra) > 0 && (
+                    <div className={styles.servicesTableRow}>
+                      <div className={styles.servicesColInfo}>
+                        <strong>Manutenção corretiva / mão de obra</strong>
+                      </div>
+                      <div>1</div>
+                      <div>{formatCurrency(ordem.valor_mao_obra)}</div>
+                      <div>
+                        <strong>{formatCurrency(ordem.valor_mao_obra)}</strong>
+                      </div>
+                    </div>
+                  )}
+
+                  {ordem.itens_os?.map((item: any) => (
+                    <div
+                      key={item.id_item_os}
+                      className={styles.servicesTableRow}
+                    >
+                      <div className={styles.servicesColInfo}>
+                        <strong>
+                          {item.catalogo_item?.descricao ||
+                            "Item sem descrição"}
+                        </strong>
+                      </div>
+                      <div>{Number(item.quantidade)}</div>
+                      <div>{formatCurrency(item.valor_unitario)}</div>
+                      <div>
+                        <strong>{formatCurrency(item.valor_total)}</strong>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className={styles.orcamentoTotalRow}>
+                <span>Total</span>
+                <strong>{formatCurrency(ordem.valor_total || 0)}</strong>
+              </div>
+
+              <div className={styles.orcamentoActionRow}>
+                <button className={styles.btnSecondaryOutline}>
+                  Consultar orçamento <ArrowRight size={16} />
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ABA: FINANCEIRO */}
       {activeTab === "financeiro" && (
         <div className={styles.fullCol}>
-          <h2 className={styles.sectionTitle}>
-            Resumo financeiro
-          </h2>
+          <h2 className={styles.sectionTitle}>Resumo financeiro</h2>
 
           {isLoadingFinanceiro ? (
             <div className={styles.emptyServicesState}>
@@ -972,59 +992,43 @@ export default function RouteComponent() {
               <div className={styles.financeRow}>
                 <div className={styles.financeColBlock}>
                   <label>Valor do serviço</label>
-                  <strong>
-                    {formatCurrency(financeiroDaOS.valor)}
-                  </strong>
+                  <strong>{formatCurrency(financeiroDaOS.valor)}</strong>
                 </div>
 
-                <div className={styles.financeColBlock}>
+                <div
+                  className={styles.financeColBlock}
+                  style={{ alignItems: "flex-end" }}
+                >
                   <label>Situação</label>
 
                   <span className={styles.paymentBadge}>
                     <span className={styles.dotOrange} />
 
-                    {financeiroDaOS.status_pagamento
-                      .charAt(0)
-                      .toUpperCase() +
-                      financeiroDaOS.status_pagamento
-                        .slice(1)
-                        .toLowerCase()}
+                    {financeiroDaOS.status_pagamento.charAt(0).toUpperCase() +
+                      financeiroDaOS.status_pagamento.slice(1).toLowerCase()}
                   </span>
                 </div>
               </div>
 
-              <div
-                className={styles.divider}
-                style={{ margin: "1.5rem 0" }}
-              />
+              <div className={styles.divider} style={{ margin: "1.5rem 0" }} />
 
               <div className={styles.financeDetails}>
-                <div className={styles.summaryRow}>
-                  <span>Descrição</span>
-                  <strong>{financeiroDaOS.descricao}</strong>
-                </div>
-
-                <div className={styles.summaryRow}>
-                  <span>Vencimento</span>
-                  <strong>
-                    {formatDate(financeiroDaOS.data_vencimento)}
-                  </strong>
-                </div>
-
-                <div className={styles.summaryRow}>
-                  <span>Data de cadastro</span>
-                  <strong>
-                    {formatDate(financeiroDaOS.data_cadastro)}
-                  </strong>
+                <div className={styles.financeActionsRow}>
+                  <button className={styles.btnTextAction}>
+                    Registrar pagamento <ArrowRight size={16} />
+                  </button>
+                  <button className={styles.btnTextLink}>
+                    Documento fiscal
+                  </button>
                 </div>
               </div>
             </div>
           ) : (
             <div className={styles.emptyServicesState}>
               <p>
-                O faturamento ainda não foi gerado para esta
-                Ordem de Serviço. Aguarde a conclusão da ordem
-                e utilize o botão <strong>Gerar faturamento</strong>
+                O faturamento ainda não foi gerado para esta Ordem de Serviço.
+                Aguarde a conclusão da ordem e utilize o botão{" "}
+                <strong>Gerar faturamento</strong>
                 no topo da página.
               </p>
             </div>
@@ -1032,24 +1036,69 @@ export default function RouteComponent() {
         </div>
       )}
 
-      {(activeTab === "orcamento" || activeTab === "historico") && (
-        <div className={styles.fullCol}>
-          <div className={styles.emptyServicesState}>
-            <p>
-              O conteúdo desta aba (
-              {activeTab.replace("_", " ")}) será implementado
-              em breve.
-            </p>
+      {/* MODAL DE CANCELAMENTO */}
+      {showCancelModal && (
+        <div
+          className={styles.modalOverlay}
+          onClick={() => !cancelMutation.isPending && setShowCancelModal(false)}
+        >
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <div>
+                <h2>Cancelar Ordem de Serviço</h2>
+                <p>OS-{ordem.id_ordem_servico}</p>
+              </div>
+              <button
+                type="button"
+                className={styles.modalClose}
+                disabled={cancelMutation.isPending}
+                onClick={() => setShowCancelModal(false)}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className={styles.modalBody}>
+              <p style={{ color: "#0f172a", fontSize: "0.875rem", margin: 0 }}>
+                Tem certeza que deseja cancelar esta Ordem de Serviço? Esta ação
+                não poderá ser desfeita.
+              </p>
+            </div>
+
+            <div className={styles.modalFooter}>
+              <button
+                type="button"
+                className={styles.btnModalCancel}
+                disabled={cancelMutation.isPending}
+                onClick={() => setShowCancelModal(false)}
+              >
+                Voltar
+              </button>
+              <button
+                type="button"
+                className={styles.btnPrimary}
+                style={{ backgroundColor: "#ef4444" }}
+                onClick={() => cancelMutation.mutate()}
+                disabled={cancelMutation.isPending}
+              >
+                {cancelMutation.isPending ? (
+                  <Loader2 size={16} className={styles.spinner} />
+                ) : (
+                  <Trash2 size={16} />
+                )}
+                Sim, Cancelar OS
+              </button>
+            </div>
           </div>
         </div>
       )}
 
+      {/* MODAL DE DIAGNÓSTICO */}
       {showDiagnosticModal && (
         <div
           className={styles.modalOverlay}
           onClick={() =>
-            !diagnosticMutation.isPending &&
-            setShowDiagnosticModal(false)
+            !diagnosticMutation.isPending && setShowDiagnosticModal(false)
           }
         >
           <div
@@ -1084,9 +1133,7 @@ export default function RouteComponent() {
               </div>
 
               <div className={styles.modalField}>
-                <label htmlFor="diagnostico">
-                  Diagnóstico técnico
-                </label>
+                <label htmlFor="diagnostico">Diagnóstico técnico</label>
 
                 <textarea
                   id="diagnostico"
@@ -1101,9 +1148,7 @@ export default function RouteComponent() {
                 />
 
                 {diagError && (
-                  <span className={styles.errorText}>
-                    {diagError}
-                  </span>
+                  <span className={styles.errorText}>{diagError}</span>
                 )}
               </div>
             </div>
@@ -1125,14 +1170,10 @@ export default function RouteComponent() {
                 disabled={diagnosticMutation.isPending}
               >
                 {diagnosticMutation.isPending ? (
-                  <Loader2
-                    size={16}
-                    className={styles.spinner}
-                  />
+                  <Loader2 size={16} className={styles.spinner} />
                 ) : (
                   <Check size={16} />
                 )}
-
                 Salvar diagnóstico
               </button>
             </div>
@@ -1140,12 +1181,12 @@ export default function RouteComponent() {
         </div>
       )}
 
+      {/* MODAL DE CONCLUSÃO */}
       {showCompletionModal && (
         <div
           className={styles.modalOverlay}
           onClick={() =>
-            !completionMutation.isPending &&
-            setShowCompletionModal(false)
+            !completionMutation.isPending && setShowCompletionModal(false)
           }
         >
           <div
@@ -1175,9 +1216,7 @@ export default function RouteComponent() {
               </div>
 
               <div className={styles.modalField}>
-                <label htmlFor="solucao">
-                  Solução aplicada
-                </label>
+                <label htmlFor="solucao">Solução aplicada</label>
 
                 <textarea
                   id="solucao"
@@ -1192,9 +1231,7 @@ export default function RouteComponent() {
                 />
 
                 {completionError && (
-                  <span className={styles.errorText}>
-                    {completionError}
-                  </span>
+                  <span className={styles.errorText}>{completionError}</span>
                 )}
               </div>
             </div>
@@ -1216,14 +1253,10 @@ export default function RouteComponent() {
                 disabled={completionMutation.isPending}
               >
                 {completionMutation.isPending ? (
-                  <Loader2
-                    size={16}
-                    className={styles.spinner}
-                  />
+                  <Loader2 size={16} className={styles.spinner} />
                 ) : (
                   <Check size={16} />
                 )}
-
                 Finalizar OS
               </button>
             </div>
@@ -1231,13 +1264,11 @@ export default function RouteComponent() {
         </div>
       )}
 
+      {/* MODAL DE ORÇAMENTO */}
       {showBudgetModal && (
         <div
           className={styles.modalOverlay}
-          onClick={() =>
-            !budgetMutation.isPending &&
-            setShowBudgetModal(false)
-          }
+          onClick={() => !budgetMutation.isPending && setShowBudgetModal(false)}
         >
           <div
             className={`${styles.modal} ${styles.modalLarge}`}
@@ -1267,13 +1298,8 @@ export default function RouteComponent() {
                   <h3>Adicionar Peças e Serviços do Catálogo</h3>
 
                   <div className={styles.addItemRow}>
-                    <div
-                      className={styles.formGroup}
-                      style={{ flex: 3 }}
-                    >
-                      <label htmlFor="catalogo-item">
-                        Buscar Item
-                      </label>
+                    <div className={styles.formGroup} style={{ flex: 3 }}>
+                      <label htmlFor="catalogo-item">Buscar Item</label>
 
                       <select
                         id="catalogo-item"
@@ -1281,9 +1307,7 @@ export default function RouteComponent() {
                         onChange={(event) => {
                           const value = event.target.value
 
-                          setSelectedItemId(
-                            value ? Number(value) : "",
-                          )
+                          setSelectedItemId(value ? Number(value) : "")
                         }}
                         disabled={isLoadingCatalog}
                       >
@@ -1305,13 +1329,8 @@ export default function RouteComponent() {
                       </select>
                     </div>
 
-                    <div
-                      className={styles.formGroup}
-                      style={{ flex: 1 }}
-                    >
-                      <label htmlFor="item-quantity">
-                        Quantidade
-                      </label>
+                    <div className={styles.formGroup} style={{ flex: 1 }}>
+                      <label htmlFor="item-quantity">Qtd.</label>
 
                       <input
                         id="item-quantity"
@@ -1416,9 +1435,7 @@ export default function RouteComponent() {
 
                   <div className={styles.budgetSummaryCard}>
                     <div className={styles.budgetSummaryRow}>
-                      <span>
-                        Peças e Itens ({addedItems.length})
-                      </span>
+                      <span>Peças e Itens ({addedItems.length})</span>
 
                       <span>{formatCurrency(totalPecas)}</span>
                     </div>
@@ -1440,9 +1457,7 @@ export default function RouteComponent() {
                   </div>
 
                   {budgetError && (
-                    <span className={styles.errorText}>
-                      {budgetError}
-                    </span>
+                    <span className={styles.errorText}>{budgetError}</span>
                   )}
                 </div>
               )}
@@ -1479,8 +1494,7 @@ export default function RouteComponent() {
                     onClick={() => setBudgetStep(1)}
                     disabled={budgetMutation.isPending}
                   >
-                    <ArrowLeft size={16} />
-                    Voltar
+                    <ArrowLeft size={16} /> Voltar
                   </button>
 
                   <button
@@ -1488,23 +1502,134 @@ export default function RouteComponent() {
                     className={styles.btnPrimary}
                     onClick={handleSaveBudget}
                     disabled={
-                      budgetMutation.isPending ||
-                      !laborCostInput.trim()
+                      budgetMutation.isPending || !laborCostInput.trim()
                     }
                   >
                     {budgetMutation.isPending ? (
-                      <Loader2
-                        size={16}
-                        className={styles.spinner}
-                      />
+                      <Loader2 size={16} className={styles.spinner} />
                     ) : (
                       <Check size={16} />
                     )}
-
                     Salvar orçamento
                   </button>
                 </>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE EDIÇÃO */}
+      {showEditModal && (
+        <div
+          className={styles.modalOverlay}
+          onClick={() => !editMutation.isPending && setShowEditModal(false)}
+        >
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <div>
+                <h2>Editar Ordem de Serviço</h2>
+                <p>OS-{ordem.id_ordem_servico}</p>
+              </div>
+              <button
+                type="button"
+                className={styles.modalClose}
+                disabled={editMutation.isPending}
+                onClick={() => setShowEditModal(false)}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className={styles.modalBody}>
+              <div className={styles.formGroup}>
+                <label>Cliente *</label>
+                <select
+                  value={editIdCliente}
+                  onChange={(e) =>
+                    setEditIdCliente(Number(e.target.value) || "")
+                  }
+                  disabled={isLoadingClientes || editMutation.isPending}
+                >
+                  <option value="">Selecione um cliente...</option>
+                  {clientes.map((c) => (
+                    <option key={c.id_cliente} value={c.id_cliente}>
+                      {c.nome}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>Equipamento *</label>
+                <select
+                  value={editIdAtivo}
+                  onChange={(e) => setEditIdAtivo(Number(e.target.value) || "")}
+                  disabled={
+                    !editIdCliente || isFetchingAtivos || editMutation.isPending
+                  }
+                >
+                  <option value="">
+                    {!editIdCliente
+                      ? "Selecione o cliente primeiro"
+                      : "Selecione o equipamento..."}
+                  </option>
+                  {ativos.map((a) => (
+                    <option key={a.id_ativo} value={a.id_ativo}>
+                      {a.descricao}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className={styles.modalField}>
+                <label>Problema relatado *</label>
+                <textarea
+                  value={editDescricao}
+                  onChange={(e) => setEditDescricao(e.target.value)}
+                  disabled={editMutation.isPending}
+                  placeholder="Descreva o problema..."
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>Data de Previsão</label>
+                <input
+                  type="date"
+                  value={editPrevisao}
+                  onChange={(e) => setEditPrevisao(e.target.value)}
+                  disabled={editMutation.isPending}
+                />
+              </div>
+
+              {editError && (
+                <span className={styles.errorText}>{editError}</span>
+              )}
+            </div>
+
+            <div className={styles.modalFooter}>
+              <button
+                type="button"
+                className={styles.btnModalCancel}
+                disabled={editMutation.isPending}
+                onClick={() => setShowEditModal(false)}
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                className={styles.btnPrimary}
+                onClick={handleSaveEdit}
+                disabled={editMutation.isPending}
+              >
+                {editMutation.isPending ? (
+                  <Loader2 size={16} className={styles.spinner} />
+                ) : (
+                  <Check size={16} />
+                )}
+                Salvar Alterações
+              </button>
             </div>
           </div>
         </div>

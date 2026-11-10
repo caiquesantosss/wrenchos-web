@@ -1,5 +1,4 @@
-
-import { createFileRoute } from "@tanstack/react-router"
+import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useMemo, useState, type FormEvent } from "react"
 import { Search, Plus, X, Loader2, ArrowRight } from "lucide-react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
@@ -41,9 +40,7 @@ function getErrorMessage(error: unknown): string {
   return "Erro inesperado ao cadastrar equipamento."
 }
 
-function getMaintenanceStatus(
-  ordem?: OrdemServicoDTO
-): MaintenanceStatus {
+function getMaintenanceStatus(ordem?: OrdemServicoDTO): MaintenanceStatus {
   if (!ordem) {
     return {
       label: "Sem OS vinculada",
@@ -154,6 +151,7 @@ function getMaintenanceStatus(
 
 export default function RouteComponent() {
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
 
   const [searchTerm, setSearchTerm] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
@@ -263,7 +261,7 @@ export default function RouteComponent() {
     const ordensOrdenadas = [...ordens].sort(
       (a, b) =>
         new Date(b.data_abertura).getTime() -
-        new Date(a.data_abertura).getTime()
+        new Date(a.data_abertura).getTime(),
     )
 
     for (const ordem of ordensOrdenadas) {
@@ -292,22 +290,14 @@ export default function RouteComponent() {
     })
   }, [equipamentos, searchTerm, clientFilter])
 
-  const totalPages = Math.ceil(
-    filteredEquipamentos.length / ITEMS_PER_PAGE
-  )
+  const totalPages = Math.ceil(filteredEquipamentos.length / ITEMS_PER_PAGE)
 
-  const safeCurrentPage = Math.min(
-    currentPage,
-    Math.max(totalPages, 1)
-  )
+  const safeCurrentPage = Math.min(currentPage, Math.max(totalPages, 1))
 
   const paginatedEquipamentos = useMemo(() => {
     const startIndex = (safeCurrentPage - 1) * ITEMS_PER_PAGE
 
-    return filteredEquipamentos.slice(
-      startIndex,
-      startIndex + ITEMS_PER_PAGE
-    )
+    return filteredEquipamentos.slice(startIndex, startIndex + ITEMS_PER_PAGE)
   }, [filteredEquipamentos, safeCurrentPage])
 
   const isLoading = isLoadingEquipamentos || isLoadingOrdens
@@ -404,14 +394,10 @@ export default function RouteComponent() {
                     </div>
 
                     <div className={styles.colCliente}>
-                      <strong>
-                        {eq.cliente?.nome || "Não vinculado"}
-                      </strong>
+                      <strong>{eq.cliente?.nome || "Não vinculado"}</strong>
                     </div>
 
-                    <div className={styles.colTipo}>
-                      {eq.tipo}
-                    </div>
+                    <div className={styles.colTipo}>{eq.tipo}</div>
 
                     <div className={styles.colIdentificacao}>
                       {eq.identificacao ||
@@ -434,14 +420,17 @@ export default function RouteComponent() {
                       <button
                         type="button"
                         className={`${styles.ordersBtn} ${
-                          !manutencao.hasOrder
-                            ? styles.ordersBtnDisabled
-                            : ""
+                          !manutencao.hasOrder ? styles.ordersBtnDisabled : ""
                         }`}
                         disabled={!manutencao.hasOrder}
                         onClick={() => {
-                          if (manutencao.hasOrder) {
-                            window.location.href = "/ordens-servico"
+                          if (ordem?.id_ordem_servico) {
+                            navigate({
+                              to: "/descricao/$id", 
+                              params: {
+                                id: String(ordem.id_ordem_servico),
+                              },
+                            })
                           }
                         }}
                       >
@@ -458,11 +447,8 @@ export default function RouteComponent() {
           <div className={styles.footer}>
             <span className={styles.footerText}>
               {filteredEquipamentos.length}{" "}
-              {filteredEquipamentos.length === 1
-                ? "registro"
-                : "registros"}{" "}
-              · Página {totalPages === 0 ? 0 : safeCurrentPage} de{" "}
-              {totalPages}
+              {filteredEquipamentos.length === 1 ? "registro" : "registros"} ·
+              Página {totalPages === 0 ? 0 : safeCurrentPage} de {totalPages}
             </span>
 
             <div className={styles.pagination}>
@@ -470,9 +456,7 @@ export default function RouteComponent() {
                 type="button"
                 className={styles.pageButton}
                 disabled={safeCurrentPage <= 1}
-                onClick={() =>
-                  setCurrentPage((page) => Math.max(1, page - 1))
-                }
+                onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
               >
                 ‹
               </button>
@@ -484,9 +468,7 @@ export default function RouteComponent() {
               <button
                 type="button"
                 className={styles.pageButton}
-                disabled={
-                  totalPages === 0 || safeCurrentPage >= totalPages
-                }
+                disabled={totalPages === 0 || safeCurrentPage >= totalPages}
                 onClick={() => setCurrentPage((page) => page + 1)}
               >
                 ›
@@ -515,10 +497,7 @@ export default function RouteComponent() {
               </button>
             </div>
 
-            <form
-              className={styles.modalForm}
-              onSubmit={handleCreateSubmit}
-            >
+            <form className={styles.modalForm} onSubmit={handleCreateSubmit}>
               <div className={styles.formRow}>
                 <div className={styles.formGroup}>
                   <label htmlFor="cliente">Cliente *</label>
@@ -526,9 +505,7 @@ export default function RouteComponent() {
                   <select
                     id="cliente"
                     value={formIdCliente}
-                    onChange={(e) =>
-                      setFormIdCliente(e.target.value)
-                    }
+                    onChange={(e) => setFormIdCliente(e.target.value)}
                     disabled={
                       isLoadingClientes ||
                       isErrorClientes ||
@@ -543,10 +520,7 @@ export default function RouteComponent() {
                     </option>
 
                     {clientes.map((client) => (
-                      <option
-                        key={client.id_cliente}
-                        value={client.id_cliente}
-                      >
+                      <option key={client.id_cliente} value={client.id_cliente}>
                         {client.nome}
                       </option>
                     ))}
@@ -584,17 +558,13 @@ export default function RouteComponent() {
 
               <div className={styles.formRow}>
                 <div className={styles.formGroup}>
-                  <label htmlFor="descricao">
-                    Nome do equipamento *
-                  </label>
+                  <label htmlFor="descricao">Nome do equipamento *</label>
 
                   <input
                     id="descricao"
                     type="text"
                     value={formDescricao}
-                    onChange={(e) =>
-                      setFormDescricao(e.target.value)
-                    }
+                    onChange={(e) => setFormDescricao(e.target.value)}
                     disabled={createMutation.isPending}
                     placeholder="Ex.: Compressor de ar industrial"
                     required
@@ -602,17 +572,13 @@ export default function RouteComponent() {
                 </div>
 
                 <div className={styles.formGroup}>
-                  <label htmlFor="identificacao">
-                    Identificação
-                  </label>
+                  <label htmlFor="identificacao">Identificação</label>
 
                   <input
                     id="identificacao"
                     type="text"
                     value={formIdentificacao}
-                    onChange={(e) =>
-                      setFormIdentificacao(e.target.value)
-                    }
+                    onChange={(e) => setFormIdentificacao(e.target.value)}
                     disabled={createMutation.isPending}
                     placeholder="Ex.: COMP-001"
                   />
@@ -649,16 +615,12 @@ export default function RouteComponent() {
 
               <div className={styles.formRow}>
                 <div className={styles.formGroup}>
-                  <label htmlFor="observacoes">
-                    Observações
-                  </label>
+                  <label htmlFor="observacoes">Observações</label>
 
                   <textarea
                     id="observacoes"
                     value={formObservacoes}
-                    onChange={(e) =>
-                      setFormObservacoes(e.target.value)
-                    }
+                    onChange={(e) => setFormObservacoes(e.target.value)}
                     disabled={createMutation.isPending}
                     placeholder="Informações adicionais sobre o equipamento..."
                     rows={3}
@@ -667,9 +629,7 @@ export default function RouteComponent() {
               </div>
 
               {formError && (
-                <div className={styles.errorMessage}>
-                  {formError}
-                </div>
+                <div className={styles.errorMessage}>{formError}</div>
               )}
 
               <div className={styles.modalFooter}>
@@ -695,10 +655,7 @@ export default function RouteComponent() {
                 >
                   {createMutation.isPending ? (
                     <>
-                      <Loader2
-                        size={16}
-                        className={styles.spinner}
-                      />
+                      <Loader2 size={16} className={styles.spinner} />
                       Cadastrando...
                     </>
                   ) : (

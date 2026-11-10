@@ -338,7 +338,6 @@ function RouteComponent() {
                     </div>
                   </div>
 
-                  {/* Valor */}
                   <div className={styles.colValor}>
                     <strong>
                       {formatCurrency(Number(order.valor_total || 0))}

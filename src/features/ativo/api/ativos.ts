@@ -80,9 +80,6 @@ export const getAtivosByCliente = async (
       method: "GET",
     },
   )
-
-  console.log("Equipamentos retornados:", response)
-
   return response
 }
 

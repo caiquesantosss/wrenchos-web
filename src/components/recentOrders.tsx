@@ -2,6 +2,7 @@ import { useState } from "react"
 import styles from "./recentOrders.module.css"
 import { useQuery } from "@tanstack/react-query"
 import { getAllOrders } from "../features/orders/api/orders-request"
+import { Link, useNavigate } from "@tanstack/react-router"
 
 export default function RecentOrders() {
   const [selectedFilter, setSelectedFilter] = useState("abertas")
@@ -11,6 +12,8 @@ export default function RecentOrders() {
     queryFn: getAllOrders,
   })
 
+  const navigate = useNavigate() 
+  
   const orders = allOrders ?? []
 
   const filteredOrders = orders
@@ -128,7 +131,21 @@ export default function RecentOrders() {
                   <strong>{formatCurrency(Number(order.valor_total))}</strong>
                 </div>
 
-                <div className={styles.actionIcon}>↗</div>
+                <button
+                    type="button"
+                    className={styles.actionIcon}
+                    aria-label={`Visualizar OS ${order.id_ordem_servico}`}
+                    onClick={() =>
+                      navigate({
+                        to: "/descricao/$id",
+                        params: {
+                          id: String(order.id_ordem_servico),
+                        },
+                      })
+                    }
+                  >
+                    ↗
+                  </button>
               </div>
             ))
           )}
@@ -140,7 +157,7 @@ export default function RecentOrders() {
           {filteredOrders.length}{" "}
           {filteredOrders.length === 1 ? "ordem" : "ordens"} em acompanhamento
         </span>
-        <span className={styles.footerLink}>Ver todas as ordens ➔</span>
+        <Link to="/ordemServico" className={styles.footerLink}>Ver todas as ordens ➔</Link>
       </div>
     </div>
   )

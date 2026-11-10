@@ -8,21 +8,30 @@ import {
   FileText,
   Package,
   Wallet,
-  Receipt,
-  History,
   ShieldCheck,
   Settings,
   LogOut,
-  Circle,
   ChartNoAxesCombined,
 } from "lucide-react"
 import { logout } from "../features/auth/api/login"
 import styles from "./sidebar.module.css"
 import { Link } from "@tanstack/react-router"
+import { getAllOrders } from "../features/orders/api/orders-request"
+import { useQuery } from "@tanstack/react-query"
 
 export default function SideBar() {
   const usuarioString = localStorage.getItem("@WrenchOS:usuario")
   const usuario = usuarioString ? JSON.parse(usuarioString) : null
+
+  const { data: allOrders, isLoading: isLoadingOrders } = useQuery({
+    queryKey: ["orders", "todas"],
+    queryFn: getAllOrders,
+  })
+
+  const countNumber = allOrders?.length
+
+
+  
 
   return (
     <aside className={styles.sidebar}>
@@ -44,7 +53,6 @@ export default function SideBar() {
           <span className={styles.companyName}>Oficina central</span>
           <span className={styles.companyUnit}>Unidade São Paulo</span>
         </div>
-
       </button>
 
       <nav className={styles.navigation}>
@@ -67,7 +75,7 @@ export default function SideBar() {
           >
             <ClipboardList size={17} />
             <span>Ordens de serviço</span>
-            <span className={styles.navBadge}>5</span>
+            <span className={styles.navBadge}>{countNumber}</span>
           </Link>
 
           <Link

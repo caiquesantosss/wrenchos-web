@@ -330,14 +330,12 @@
 }
 
 .diagnosticText {
-    background-color: #f8fafc;
-    padding: 1rem;
-    border-radius: 0.375rem;
-    border-left: 3px solid #0d9488;
-    color: #475569;
-    font-size: 0.875rem;
-    line-height: 1.5;
-    overflow-wrap: anywhere;
+  background-color: transparent;
+  padding: 0;
+  color: #475569;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
 }
 
 .diagnosticEmpty {
@@ -1089,6 +1087,60 @@
     .budgetSummaryCard {
         padding: 16px;
     }
+}
+
+.orcamentoWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  width: 100%;
+}
+
+.orcamentoTotalRow {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 1rem;
+  padding-right: 1.5rem;
+}
+
+.orcamentoTotalRow span {
+  font-size: 1.5rem;
+  color: #0f172a;
+}
+
+.orcamentoTotalRow strong {
+  font-size: 1.75rem;
+  font-weight: 500;
+  color: #0f172a; 
+}
+
+.orcamentoActionRow {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 1rem;
+}
+
+.btnSecondaryOutline {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  
+  background-color: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.375rem;
+  padding: 0.6rem 1.25rem;
+  
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #0f172a;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btnSecondaryOutline:hover {
+  background-color: #f1f5f9;
+  border-color: #94a3b8;
 }
 
 @media (max-width: 380px) {

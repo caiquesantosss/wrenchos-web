@@ -95,6 +95,26 @@ export interface AddOrcamentoDTO {
     valor_mao_obra: number
 }
 
+export interface UpdateOrdemServicoDTO {
+  id_cliente: number
+  id_ativo: number
+  descricao_problema: string
+  data_previsao: string | null
+}
+
+export async function updateOrdemServico(
+  orderId: number,
+  data: UpdateOrdemServicoDTO
+): Promise<OrdemServicoDTO> {
+  return apiFetch<OrdemServicoDTO>(
+    `/ordens-servico/${orderId}`,
+    {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    }
+  )
+}
+
 export async function createOrder(data: CreateOrdemServicoDTO): Promise<OrdemServicoDTO> {
   return apiFetch<OrdemServicoDTO>('/ordens-servico', {
     method: 'POST',
@@ -172,6 +192,17 @@ export async function finishExecution(
     {
       method: 'POST', 
       body: JSON.stringify(data)
+    }
+  )
+}
+
+export async function cancelOrdemServico(
+  orderId: number
+): Promise<OrdemServicoDTO> {
+  return apiFetch<OrdemServicoDTO>(
+    `/ordens-servico/${orderId}/cancelar`,
+    {
+      method: 'PATCH'
     }
   )
 }
